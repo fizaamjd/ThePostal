@@ -3,7 +3,10 @@ import { useRouter } from 'next/router';
 import { Box, Button, Container, Divider, Stack, Typography } from '@mui/material';
 import { ArrowForwardRounded } from '@mui/icons-material';
 import { useAuth } from '../lib/auth-context';
+import { useTheme } from '@mui/material/styles';
+import { PHASE_LABEL, phaseInk } from '../lib/phase-ink';
 import Wordmark from '../components/Wordmark';
+import ModeToggle from '../components/ModeToggle';
 
 /* A real transaction, shown at the size it was measured. */
 const TRANSCRIPT = [
@@ -29,8 +32,8 @@ const PHASES = [
   { phase: 'tls', ms: 44.2 },
   { phase: 'greeting', ms: 2.2 },
   { phase: 'ehlo', ms: 1.5 },
-  { phase: 'mail from', ms: 0.4 },
-  { phase: 'rcpt to', ms: 0.3 },
+  { phase: 'mailFrom', ms: 0.4 },
+  { phase: 'rcptTo', ms: 0.3 },
   { phase: 'data', ms: 47.6 },
   { phase: 'quit', ms: 0.6 },
 ];
@@ -59,13 +62,14 @@ const CLAIMS = [
 
 export default function Home() {
   const router = useRouter();
+  const theme = useTheme();
   const { status } = useAuth();
 
   const authed = status === 'authenticated';
   const total = PHASES.reduce((a, p) => a + p.ms, 0);
 
   return (
-    <Box sx={{ bgcolor: 'background.paper', minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       {/* --- header ------------------------------------------------------ */}
       <Box
         component="header"
@@ -75,7 +79,7 @@ export default function Home() {
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          bgcolor: 'rgba(255,255,255,0.86)',
+          bgcolor: 'background.paper',
           backdropFilter: 'saturate(180%) blur(12px)',
         }}
       >
@@ -91,6 +95,7 @@ export default function Home() {
               >
                 API reference
               </Button>
+              <ModeToggle />
               <Button
                 size="small"
                 variant="contained"
@@ -179,7 +184,7 @@ export default function Home() {
       </Container>
 
       {/* --- the waterfall, as the thesis ------------------------------- */}
-      <Box sx={{ borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
+      <Box sx={{ borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Container maxWidth="lg" sx={{ py: { xs: 7, md: 9 } }}>
           <Typography variant="h2" sx={{ mb: 1.5, maxWidth: '20ch', textWrap: 'balance' }}>
             One number cannot tell you what went wrong
@@ -189,7 +194,7 @@ export default function Home() {
             two problems with completely different causes. Collapsed into a single figure, they are
             indistinguishable.
           </Typography>
-          <Waterfall phases={PHASES} total={total} />
+          <Waterfall phases={PHASES} total={total} mode={theme.palette.mode} />
         </Container>
       </Box>
 
@@ -321,57 +326,69 @@ function Transcript({ lines }) {
   );
 }
 
-function Waterfall({ phases, total }) {
-  const peak = Math.max(...phases.map((p) => p.ms));
+function Waterfall({ phases, total, mode }) {
+  // Bars are offset by the time already elapsed, so the chart reads left to
+  // right as the transaction actually ran.
+  let elapsed = 0;
+  const rows = phases.map((p) => {
+    const row = { ...p, offset: elapsed };
+    elapsed += p.ms;
+    return row;
+  });
 
   return (
     <Box sx={{ display: 'grid', gap: 0.25 }}>
-      {phases.map((p) => (
-        <Box
-          key={p.phase}
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '84px 1fr 62px', sm: '120px 1fr 72px' },
-            alignItems: 'center',
-            gap: 2,
-            py: 0.75,
-          }}
-        >
-          <Typography
-            className="mono"
-            sx={{ fontFamily: 'var(--mono)', fontSize: '0.75rem', color: 'text.secondary' }}
-          >
-            {p.phase}
-          </Typography>
+      {rows.map((p) => {
+        const ink = phaseInk(p.phase, mode);
+        const lead = p.ms / total >= 0.2;
 
-          <Box sx={{ position: 'relative', height: 10, bgcolor: 'grey.100', borderRadius: 0.5 }}>
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                width: `${(p.ms / peak) * 100}%`,
-                // The two phases that dominate are the ones worth noticing, so
-                // they carry the signal colour and everything else recedes.
-                bgcolor: p.ms > total * 0.2 ? 'secondary.main' : 'grey.400',
-                borderRadius: 0.5,
-              }}
-            />
-          </Box>
-
-          <Typography
-            className="mono tnum"
+        return (
+          <Box
+            key={p.phase}
             sx={{
-              fontFamily: 'var(--mono)',
-              fontSize: '0.75rem',
-              textAlign: 'right',
-              color: p.ms > total * 0.2 ? 'text.primary' : 'text.secondary',
-              fontWeight: p.ms > total * 0.2 ? 600 : 400,
+              display: 'grid',
+              gridTemplateColumns: { xs: '78px 1fr 64px', sm: '110px 1fr 74px' },
+              alignItems: 'center',
+              gap: 2,
+              py: 0.6,
             }}
           >
-            {p.ms.toFixed(1)} ms
-          </Typography>
-        </Box>
-      ))}
+            <Typography
+              className="mono"
+              sx={{ fontFamily: 'var(--mono)', fontSize: '0.6875rem', color: 'text.secondary' }}
+            >
+              {PHASE_LABEL[p.phase] ?? p.phase}
+            </Typography>
+
+            <Box sx={{ position: 'relative', height: 12, bgcolor: 'divider', borderRadius: 0.5, overflow: 'hidden' }}>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: `${(p.offset / total) * 100}%`,
+                  width: `${Math.max((p.ms / total) * 100, 0.9)}%`,
+                  bgcolor: ink,
+                  borderRadius: 0.5,
+                }}
+              />
+            </Box>
+
+            <Typography
+              className="mono tnum"
+              sx={{
+                fontFamily: 'var(--mono)',
+                fontSize: '0.6875rem',
+                textAlign: 'right',
+                color: 'text.primary',
+                fontWeight: lead ? 600 : 400,
+              }}
+            >
+              {p.ms.toFixed(1)} ms
+            </Typography>
+          </Box>
+        );
+      })}
     </Box>
   );
 }

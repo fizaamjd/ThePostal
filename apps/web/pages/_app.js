@@ -1,12 +1,10 @@
 import * as React from 'react';
 import PropTypes from 'prop-types';
 import Head from 'next/head';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import { CacheProvider } from '@emotion/react';
-import theme from '../theme';
 import createEmotionCache from '../createEmotionCache';
 import { AuthProvider } from '../lib/auth-context';
+import { ThemeModeProvider } from '../lib/theme-mode';
 
 // Client-side cache, shared for the whole session of the user in the browser.
 const clientSideEmotionCache = createEmotionCache();
@@ -25,14 +23,12 @@ export default function MyApp(props) {
         <meta name="viewport" content="initial-scale=1, width=device-width" />
         <link rel="icon" href="/logo.svg" />
       </Head>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {/* Wraps the whole app: the session has to survive client-side
-            navigation, and every guarded page reads from this one provider. */}
+      {/* Theme mode wraps auth so a signed-out page is themed too. */}
+      <ThemeModeProvider>
         <AuthProvider>
           <Component {...pageProps} />
         </AuthProvider>
-      </ThemeProvider>
+      </ThemeModeProvider>
     </CacheProvider>
   );
 }

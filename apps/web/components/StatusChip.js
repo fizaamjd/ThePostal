@@ -1,47 +1,42 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
+import { OUTCOME, outcomeInk } from '../lib/phase-ink';
 
 /**
- * Delivery state, shown as a dot plus a word.
- *
- * Colour is doing real work here — it is the one place in the interface where
- * hue carries meaning — so it is always paired with a distinct label, and the
- * dot is filled or hollow so the states stay separable without colour at all.
+ * Delivery outcome. Colour is doing real work, so it is always paired with the
+ * word and with a filled-or-hollow marker — the states stay separable with no
+ * colour at all.
  */
-const PRESETS = {
-  queued:   { label: 'Queued',    color: 'postal.state.idle',  filled: false },
-  sending:  { label: 'Sending',   color: 'secondary.main',     filled: false },
-  sent:     { label: 'Delivered', color: 'success.main',       filled: true },
-  deferred: { label: 'Deferred',  color: 'warning.main',       filled: true },
-  failed:   { label: 'Failed',    color: 'error.main',         filled: true },
-};
-
 export default function StatusChip({ status, size = 'small' }) {
-  const p = PRESETS[status] ?? { label: status, color: 'text.secondary', filled: false };
-  const dot = size === 'medium' ? 7 : 6;
+  const theme = useTheme();
+  const ink = outcomeInk(status, theme.palette.mode);
+  const label = OUTCOME[status]?.label ?? status;
+  const settled = status === 'sent' || status === 'failed' || status === 'deferred';
+  const box = size === 'medium' ? 8 : 7;
 
   return (
-    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
+    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.7, flexShrink: 0 }}>
       <Box
         sx={{
-          width: dot,
-          height: dot,
-          borderRadius: '50%',
+          width: box,
+          height: box,
+          borderRadius: 0.25,
           flexShrink: 0,
           border: '1.5px solid',
-          borderColor: p.color,
-          bgcolor: p.filled ? p.color : 'transparent',
+          borderColor: ink,
+          backgroundColor: settled ? ink : 'transparent',
         }}
       />
       <Typography
         sx={{
-          fontSize: size === 'medium' ? '0.8125rem' : '0.75rem',
-          fontWeight: 550,
-          color: p.color,
+          fontSize: size === 'medium' ? '0.8125rem' : '0.6875rem',
+          fontWeight: 600,
+          letterSpacing: '0.01em',
+          color: ink,
           whiteSpace: 'nowrap',
         }}
       >
-        {p.label}
+        {label}
       </Typography>
     </Box>
   );

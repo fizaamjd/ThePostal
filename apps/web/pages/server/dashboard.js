@@ -30,6 +30,9 @@ import { stats as statsApi, system, subscribeToEvents } from '../../lib/api';
 import { useRequireAuth } from '../../lib/auth-context';
 import TopBar from '../../components/TopBar';
 import SmtpWaterfall from '../../components/SmtpWaterfall';
+import Readout from '../../components/Readout';
+import { outcomeInk } from '../../lib/phase-ink';
+import { useTheme } from '@mui/material/styles';
 
 const WINDOWS = [
   { value: 1, label: 'Last hour' },
@@ -39,6 +42,8 @@ const WINDOWS = [
 ];
 
 export default function ServerDashboard() {
+  const theme = useTheme();
+  const mode = theme.palette.mode;
   const { isReady } = useRequireAuth();
 
   const [windowHours, setWindowHours] = useState(24);
@@ -143,7 +148,8 @@ export default function ServerDashboard() {
           <Grid item xs={12} sm={6} lg={3}>
             <MetricCard
               Icon={CheckCircle}
-              label="Delivery rate"
+              label="delivery rate"
+              ink={outcomeInk('sent', mode)}
               value={`${deliveryRate}%`}
               caption={`${totals.sent ?? 0} delivered · ${totals.failed ?? 0} failed`}
               progress={deliveryRate}
@@ -152,7 +158,7 @@ export default function ServerDashboard() {
           <Grid item xs={12} sm={6} lg={3}>
             <MetricCard
               Icon={Speed}
-              label="Median transaction"
+              label="median transaction"
               value={summary?.latency.p50Ms != null ? `${summary.latency.p50Ms} ms` : '—'}
               caption={
                 summary?.latency.p95Ms != null
@@ -164,7 +170,8 @@ export default function ServerDashboard() {
           <Grid item xs={12} sm={6} lg={3}>
             <MetricCard
               Icon={Inventory2}
-              label="In flight"
+              label="in flight"
+              ink={outcomeInk('deferred', mode)}
               value={String((totals.queued ?? 0) + (totals.deferred ?? 0))}
               caption={`${totals.queued ?? 0} queued · ${totals.deferred ?? 0} awaiting retry`}
             />
@@ -172,7 +179,7 @@ export default function ServerDashboard() {
           <Grid item xs={12} sm={6} lg={3}>
             <MetricCard
               Icon={Bolt}
-              label="Received"
+              label="received"
               value={String(totals.received ?? 0)}
               caption="Inbound over the SMTP listener"
             />
@@ -302,39 +309,16 @@ export default function ServerDashboard() {
   );
 }
 
-function MetricCard({ Icon, label, value, caption, progress }) {
+function MetricCard({ Icon, label, value, caption, progress, ink }) {
   return (
     <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ p: 2.25 }}>
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.75 }}>
-          <Icon sx={{ fontSize: 15, color: 'text.disabled' }} />
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 550 }}>
-            {label}
-          </Typography>
-        </Stack>
-
-        <Typography
-          className="mono tnum"
-          sx={{
-            fontFamily: 'var(--mono)',
-            fontSize: '1.75rem',
-            fontWeight: 600,
-            letterSpacing: '-0.03em',
-            lineHeight: 1,
-            mb: 0.75,
-          }}
-        >
-          {value}
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-          {caption}
-        </Typography>
-
+      <CardContent sx={{ p: 2 }}>
+        <Readout label={label} value={value} caption={caption} ink={ink} />
         {progress != null && (
           <LinearProgress
             variant="determinate"
             value={Math.min(100, Math.max(0, progress))}
-            sx={{ mt: 1.75, height: 4, '& .MuiLinearProgress-bar': { bgcolor: 'primary.main' } }}
+            sx={{ mt: 1.5, '& .MuiLinearProgress-bar': { bgcolor: ink || 'text.primary' } }}
           />
         )}
       </CardContent>

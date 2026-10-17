@@ -1,89 +1,76 @@
 import React from 'react';
-import { Box, Stack, Tooltip, Typography } from '@mui/material';
+import { Box, Stack, Tooltip, Typography, useTheme } from '@mui/material';
+import { PHASE_HINT, PHASE_LABEL, PHASE_ORDER, STAGES, phaseInk, stageOf } from '../lib/phase-ink';
 
 /**
- * An SMTP transaction, laid out to scale.
+ * One SMTP transaction, laid out to scale and coloured by the phase ink system.
  *
- * A table of durations makes the reader do the comparison. Drawn in proportion,
- * the answer to "what made this slow" is immediate — and the phases that
- * dominate are the only ones that take the signal colour, so the eye lands on
- * them before it reads a single number.
+ * Bars start where the previous phase ended, so the row reads as a sequence on
+ * the wire rather than as an unordered bar chart — the gap between a bar's
+ * start and the left edge is time already spent. Each phase keeps the ink it
+ * carries everywhere else in the product, so the palette is learned once.
  */
-const LABELS = {
-  dns: 'DNS',
-  tcp: 'TCP',
-  tls: 'TLS',
-  greeting: 'Banner',
-  ehlo: 'EHLO',
-  auth: 'AUTH',
-  mailFrom: 'MAIL FROM',
-  rcptTo: 'RCPT TO',
-  data: 'DATA',
-  quit: 'QUIT',
-};
+export default function SmtpWaterfall({ phases = [], totalMs = 0, dense = false, showLegend = true }) {
+  const theme = useTheme();
+  const mode = theme.palette.mode;
+  const cap = theme.palette.capture;
 
-const HINTS = {
-  dns: 'Resolving the recipient domain’s MX records',
-  tcp: 'Opening the connection to the mail server',
-  tls: 'STARTTLS upgrade and certificate handshake',
-  greeting: 'Waiting for the server’s 220 greeting',
-  ehlo: 'Capability negotiation',
-  auth: 'Authenticating to the relay',
-  mailFrom: 'Declaring the envelope sender',
-  rcptTo: 'Declaring each envelope recipient',
-  data: 'Transferring the message body',
-  quit: 'Closing the session',
-};
-
-export default function SmtpWaterfall({ phases = [], totalMs = 0, dense = false }) {
-  const measured = phases.filter((p) => p.durationMs > 0);
+  const measured = phases
+    .filter((p) => p.durationMs > 0)
+    .sort((a, b) => PHASE_ORDER.indexOf(a.phase) - PHASE_ORDER.indexOf(b.phase));
 
   if (measured.length === 0) {
     return (
       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        No transaction has been recorded for this message yet.
+        No transaction recorded for this message yet.
       </Typography>
     );
   }
 
   const sum = measured.reduce((acc, p) => acc + p.durationMs, 0) || 1;
-  const peak = Math.max(...measured.map((p) => p.durationMs));
-  // A phase worth noticing is one taking a fifth or more of the transaction.
-  const significant = (ms) => ms / sum >= 0.2;
+
+  // Cumulative offsets turn the chart into a timeline.
+  let elapsed = 0;
+  const rows = measured.map((p) => {
+    const row = { ...p, offset: elapsed, share: (p.durationMs / sum) * 100 };
+    elapsed += p.durationMs;
+    return row;
+  });
+
+  const stagesPresent = [...new Set(measured.map((p) => stageOf(p.phase)).filter(Boolean))];
 
   return (
     <Box>
       <Stack spacing={0}>
-        {measured.map((p) => {
-          const label = LABELS[p.phase] ?? p.phase;
-          const share = (p.durationMs / sum) * 100;
-          const lead = significant(p.durationMs);
+        {rows.map((p) => {
+          const ink = phaseInk(p.phase, mode);
+          const label = PHASE_LABEL[p.phase] ?? p.phase;
 
           return (
             <Tooltip
               key={p.phase}
               arrow
               placement="top"
-              title={`${share.toFixed(1)}% of the transaction${HINTS[p.phase] ? ` · ${HINTS[p.phase]}` : ''}`}
+              title={`${p.share.toFixed(1)}% of the transaction${PHASE_HINT[p.phase] ? ` · ${PHASE_HINT[p.phase]}` : ''}`}
             >
               <Box
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: dense ? '72px 1fr 58px' : '88px 1fr 68px',
+                  gridTemplateColumns: dense ? '74px 1fr 56px' : '94px 1fr 66px',
                   alignItems: 'center',
-                  gap: 1.5,
-                  py: dense ? 0.4 : 0.6,
+                  gap: 1.25,
+                  py: dense ? 0.3 : 0.45,
                   cursor: 'default',
-                  '&:hover .bar': { opacity: 0.78 },
+                  '&:hover .track': { backgroundColor: cap.sunken },
                 }}
               >
                 <Typography
                   className="mono"
                   sx={{
                     fontFamily: 'var(--mono)',
-                    fontSize: dense ? '0.6875rem' : '0.75rem',
-                    color: lead ? 'text.primary' : 'text.secondary',
-                    fontWeight: lead ? 600 : 400,
+                    fontSize: dense ? '0.625rem' : '0.6875rem',
+                    color: 'text.secondary',
+                    letterSpacing: '0.02em',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -92,18 +79,26 @@ export default function SmtpWaterfall({ phases = [], totalMs = 0, dense = false 
                   {label}
                 </Typography>
 
-                <Box sx={{ position: 'relative', height: dense ? 8 : 10, bgcolor: 'grey.100', borderRadius: 0.5 }}>
+                <Box
+                  className="track"
+                  sx={{
+                    position: 'relative',
+                    height: dense ? 9 : 12,
+                    borderRadius: 0.5,
+                    backgroundColor: cap.lineSoft,
+                    transition: 'background-color 110ms ease',
+                    overflow: 'hidden',
+                  }}
+                >
                   <Box
-                    className="bar"
                     sx={{
                       position: 'absolute',
-                      left: 0,
                       top: 0,
                       bottom: 0,
-                      width: `${Math.max((p.durationMs / peak) * 100, 1.5)}%`,
-                      bgcolor: lead ? 'secondary.main' : 'grey.400',
+                      left: `${(p.offset / sum) * 100}%`,
+                      width: `${Math.max(p.share, 0.9)}%`,
+                      backgroundColor: ink,
                       borderRadius: 0.5,
-                      transition: 'opacity 120ms ease',
                     }}
                   />
                 </Box>
@@ -112,10 +107,10 @@ export default function SmtpWaterfall({ phases = [], totalMs = 0, dense = false 
                   className="mono tnum"
                   sx={{
                     fontFamily: 'var(--mono)',
-                    fontSize: dense ? '0.6875rem' : '0.75rem',
+                    fontSize: dense ? '0.625rem' : '0.6875rem',
                     textAlign: 'right',
-                    color: lead ? 'text.primary' : 'text.secondary',
-                    fontWeight: lead ? 600 : 400,
+                    color: 'text.primary',
+                    fontWeight: 500,
                   }}
                 >
                   {p.durationMs.toFixed(1)}
@@ -129,10 +124,11 @@ export default function SmtpWaterfall({ phases = [], totalMs = 0, dense = false 
       <Stack
         direction="row"
         justifyContent="space-between"
-        sx={{ mt: 1.5, pt: 1.25, borderTop: '1px solid', borderColor: 'divider' }}
+        alignItems="center"
+        sx={{ mt: 1.25, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}
       >
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          Total transaction
+        <Typography variant="overline" sx={{ color: 'text.disabled' }}>
+          total
         </Typography>
         <Typography
           className="mono tnum"
@@ -141,6 +137,26 @@ export default function SmtpWaterfall({ phases = [], totalMs = 0, dense = false 
           {totalMs.toFixed(1)} ms
         </Typography>
       </Stack>
+
+      {showLegend && stagesPresent.length > 0 && (
+        <Stack direction="row" flexWrap="wrap" sx={{ gap: 1.25, mt: 1.25 }}>
+          {stagesPresent.map((key) => (
+            <Stack key={key} direction="row" alignItems="center" spacing={0.6}>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 0.25,
+                  backgroundColor: STAGES[key][mode === 'dark' ? 'dark' : 'light'],
+                }}
+              />
+              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.6875rem' }}>
+                {STAGES[key].label}
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+      )}
     </Box>
   );
 }

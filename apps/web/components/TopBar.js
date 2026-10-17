@@ -19,6 +19,7 @@ import {
 import { Logout, MenuRounded } from '@mui/icons-material';
 import { useAuth } from '../lib/auth-context';
 import Wordmark from './Wordmark';
+import ModeToggle from './ModeToggle';
 
 const LINKS = [
   { href: '/client/dashboard', label: 'Mailbox' },
@@ -113,6 +114,8 @@ export default function TopBar() {
             })}
           </Stack>
         )}
+
+        <ModeToggle />
 
         {user && (
           <IconButton onClick={(e) => setAccount(e.currentTarget)} aria-label="Account" sx={{ p: 0.5 }}>

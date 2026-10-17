@@ -88,7 +88,7 @@ export default function AuthPage() {
         bgcolor: 'background.default',
       }}
     >
-      <Card sx={{ width: '100%', maxWidth: 460, borderRadius: 4 }}>
+      <Card sx={{ width: '100%', maxWidth: 440, boxShadow: 3 }}>
         <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
           <Stack spacing={1} alignItems="center" sx={{ mb: 4 }}>
             <Wordmark size={26} showText={false} />
