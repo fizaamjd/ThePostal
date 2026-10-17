@@ -16,7 +16,6 @@ class MyDocument extends Document {
           <meta name="theme-color" content="#FFFFFF" />
         </Head>
         <body>
-          {/* eslint-disable-next-line react/no-danger */}
           <div
             dangerouslySetInnerHTML={{
               __html: `<!--
