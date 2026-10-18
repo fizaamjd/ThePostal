@@ -470,8 +470,9 @@ than one that says where it stops.
   deployment expecting large mail would use an object store and stream the body.
 - **Single-instance event bus.** The SSE stream is fed by an in-process emitter. Running more than one
   API instance would need a Redis pub/sub channel behind the same two functions.
-- Two `npm audit` advisories remain, both in the `postcss` version bundled by Next.js 15 and only
-  fixable by a major upgrade to Next 16.
+- Upstream dependency advisories remain in the Next.js/PostCSS and development lint dependency
+  chains. See [the dependency audit status](SECURITY.md#dependency-audit-status--18-october-2026)
+  for affected components and follow-up guidance.
 
 ---
 
