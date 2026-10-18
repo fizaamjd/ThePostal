@@ -1,0 +1,20 @@
+name: Feature proposal
+description: Propose an improvement to Postal.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior and alternatives
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Compatibility and security considerations
+      description: Consider protocol behavior, existing data, and deployment changes.

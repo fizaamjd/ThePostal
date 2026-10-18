@@ -4,7 +4,7 @@ import { FlatCompat } from '@eslint/eslintrc';
 
 const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)) });
 
-export default [
+const config = [
   { ignores: ['.next/**', 'node_modules/**'] },
   // `next/core-web-vitals` still ships as an eslintrc-style config, so it is
   // bridged into flat config rather than rewritten.
@@ -17,3 +17,5 @@ export default [
     },
   },
 ];
+
+export default config;

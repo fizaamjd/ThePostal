@@ -1,0 +1,1370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Postal — Motion Reel</title>
+<meta name="description" content="Motion graphics reel for Postal, a self-hosted SMTP mail transfer agent with per-transaction network telemetry.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   POSTAL — MOTION REEL
+   Palette, phase inks, type and component geometry mirror the
+   shipped app (apps/web/theme.js, apps/web/lib/phase-ink.js).
+   The product ships light and dark; the reel is staged in dark,
+   which is the app's own analyser mode, and scene 09 flips to
+   light to show the ink system holding across both.
+
+   Every duration quoted is a real measurement from the deployed
+   server, not an invented figure.
+   ============================================================ */
+
+:root{
+  /* Product surfaces — lifted verbatim from theme.js DARK */
+  --canvas:#0B0F14;
+  --surface:#11171E;
+  --raised:#161E27;
+  --sunken:#0D131A;
+  --line:#232E3A;
+  --line-soft:#1A232D;
+  --ink:#E4EBF2;
+  --dim:#94A3B3;
+  --faint:#67737F;
+  --accent:#6BA2F5;
+  --accent-wash:#132334;
+  /* The sheet's ground is a time ruler rather than a grid: this product
+     measures durations, so the axis that matters is horizontal. Minor ticks
+     every 40px, a stronger one every fifth, and no horizontal rules at all. */
+  --tick:rgba(228,235,242,.045);
+  --tick-major:rgba(107,162,245,.12);
+
+
+  /* Phase inks — verbatim from lib/phase-ink.js. Five stages; the second
+     phase of a stage rides at 62%, exactly as the product renders it. */
+  --resolve:#A78BFA;
+  --connect:#6BA2F5;
+  --negotiate:#44C7B5;
+  --envelope:#E0A75C;
+  --transfer:#F08A80;
+  --connect-2:rgba(107,162,245,.62);
+  --negotiate-2:rgba(68,199,181,.62);
+  --envelope-2:rgba(224,167,92,.62);
+  --transfer-2:rgba(240,138,128,.62);
+
+  /* Delivery outcome — a separate axis from phase ink */
+  --ok:#4ECB8D;
+  --warn:#E0A75C;
+  --fail:#F08A80;
+  --idle:#8C97A3;
+  --ok-row:rgba(78,203,141,.07);
+  --warn-row:rgba(224,167,92,.08);
+  --fail-row:rgba(240,138,128,.08);
+
+  /* Studio chrome — the frame around the product.
+     The dossier column is very nearly square, so a 16:9 stage letterboxes
+     hard. The sheet is square instead: the screens keep their own 1600x900
+     plate in the middle, and the bands above and below become the
+     titleblock — the annotation language a capture tool already reads in. */
+  --stage-w:1200px;
+  --stage-h:1200px;
+  --plate-w:1600px;
+  --plate-h:900px;
+  --plate-scale:0.75;   /* 1200 / 1600 */
+  --studio:#05080B;
+  --studio-2:#0A0F15;
+  --studio-fg:#E4EBF2;
+  --studio-dim:#8795A3;
+
+  --font-sans:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+  --ease:cubic-bezier(.16,1,.3,1);
+  --ease-io:cubic-bezier(.65,0,.35,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;background:var(--studio);color:var(--studio-fg);
+  font-family:var(--font-sans);overflow:hidden;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+
+.studio{height:100%;display:grid;grid-template-rows:auto 1fr auto;}
+
+/* ── studio bar ────────────────────────────────────────── */
+.studio-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  padding:14px 26px;border-bottom:1px solid #141C25;background:var(--studio-2);
+}
+.sb-brand{display:flex;align-items:center;gap:11px;}
+.sb-brand .ico{width:20px;height:20px;color:var(--accent);}
+.sb-name{font-size:15px;font-weight:700;letter-spacing:-.02em;}
+.sb-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--studio-dim);padding-left:11px;
+  border-left:1px solid #1C2632;}
+.sb-meta{display:flex;gap:22px;font-family:var(--font-mono);font-size:10.5px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--studio-dim);}
+.sb-meta b{color:var(--ink);font-weight:500;}
+
+/* ── stage ─────────────────────────────────────────────── */
+.stage-wrap{position:relative;display:grid;place-items:center;padding:16px;min-height:0;}
+.stage-frame{position:relative;}
+.stage{
+  position:absolute;top:0;left:0;transform-origin:top left;
+  width:var(--stage-w);height:var(--stage-h);
+  background-color:var(--canvas);
+  background-image:
+    repeating-linear-gradient(90deg,var(--tick-major) 0 1px,transparent 1px 200px),
+    repeating-linear-gradient(90deg,var(--tick) 0 1px,transparent 1px 40px);
+  border-radius:10px;overflow:hidden;isolation:isolate;
+  box-shadow:0 36px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(228,235,242,.07);
+  transition:background-color .8s var(--ease-io);
+}
+/* Scene 09 flips the sheet to the product's light mode.
+   The whole token set is redefined rather than just the ground, because that
+   is how the app itself switches: components read tokens, never literals, so
+   one block moves every surface, rule and ink together. The phase inks are the
+   point of the scene, so they take their own light values from phase-ink.js
+   rather than being the dark ones dimmed. */
+.stage.lightmode{
+  --canvas:#F2F4F7;
+  --surface:#FFFFFF;
+  --raised:#FAFBFC;
+  --sunken:#EDF0F4;
+  --line:#D8DEE6;
+  --line-soft:#E7EBF0;
+  --ink:#0C1118;
+  --dim:#5A6675;
+  --faint:#8A95A3;
+  --accent:#1D63D1;
+  --accent-wash:#E7EFFC;
+  --tick:rgba(12,17,24,.05);
+  --tick-major:rgba(29,99,209,.14);
+
+  --resolve:#6E56CF;
+  --connect:#1D63D1;
+  --negotiate:#0E7F72;
+  --envelope:#A26212;
+  --transfer:#C0392F;
+  --connect-2:rgba(29,99,209,.62);
+  --negotiate-2:rgba(14,127,114,.62);
+  --envelope-2:rgba(162,98,18,.62);
+  --transfer-2:rgba(192,57,47,.62);
+
+  --ok:#0B7A4B;
+  --warn:#A26212;
+  --fail:#C0392F;
+  --idle:#5B6572;
+  --ok-row:rgba(11,122,75,.055);
+  --warn-row:rgba(162,98,18,.07);
+  --fail-row:rgba(192,57,47,.06);
+
+  background-color:var(--canvas);
+  background-image:
+    repeating-linear-gradient(90deg,var(--tick-major) 0 1px,transparent 1px 200px),
+    repeating-linear-gradient(90deg,var(--tick) 0 1px,transparent 1px 40px);
+}
+
+#playhead{position:absolute;top:0;bottom:0;width:1px;z-index:2;pointer-events:none;
+  background:linear-gradient(180deg,transparent,var(--accent) 16%,var(--accent) 84%,transparent);
+  opacity:.28;will-change:transform;}
+body.is-bare #playhead{opacity:.22;}
+
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;
+  transition:opacity .34s var(--ease);}
+/* Marked elements cross-fade their colour when the sheet changes mode. */
+.tc,.tc *{transition:background-color .7s var(--ease-io),color .7s var(--ease-io),
+  border-color .7s var(--ease-io);}
+.scene.is-active{opacity:1;pointer-events:auto;}
+
+/* Every scene's children are composed against a 1600x900 canvas, so that
+   canvas is kept and scaled as a unit rather than the scenes being relaid.
+   The wrapper is inserted at boot, so scene markup stays untouched. */
+.plate{position:absolute;left:50%;top:50%;
+  width:var(--plate-w);height:var(--plate-h);
+  transform:translate(-50%,-50%) scale(var(--plate-scale));}
+
+/* ── titleblock ────────────────────────────────────────── */
+.tb{position:absolute;left:0;right:0;z-index:3;padding:0 58px;
+  font-family:var(--font-mono);color:var(--faint);
+  display:flex;align-items:center;justify-content:space-between;gap:24px;}
+.tb-head{top:0;height:262px;align-items:flex-start;padding-top:50px;}
+.tb-foot{bottom:0;height:262px;align-items:flex-end;padding-bottom:50px;}
+.tb-rule{position:absolute;left:58px;right:58px;height:1px;background:var(--line);}
+.tb-head .tb-rule{bottom:32px;}
+.tb-foot .tb-rule{top:32px;}
+.tb-brand{display:flex;align-items:center;gap:14px;}
+.tb-brand .ico{width:34px;height:34px;color:var(--accent);}
+.tb-word{font-size:30px;font-weight:700;color:var(--ink);letter-spacing:-.03em;line-height:1;}
+.tb-sub{font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-top:7px;}
+.tb-r{text-align:right;}
+.tb-scene{font-size:17px;color:var(--ink);letter-spacing:.05em;text-transform:uppercase;}
+.tb-fig{font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-top:8px;}
+.tb-note{font-size:11px;letter-spacing:.16em;text-transform:uppercase;}
+
+/* ── animation utilities ───────────────────────────────── */
+.a-up{animation:aUp .665s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aUp{from{opacity:0;transform:translateY(20px);}}
+.a-dn{animation:aDn .665s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aDn{from{opacity:0;transform:translateY(-18px);}}
+.a-in{animation:aIn .56s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aIn{from{opacity:0;}}
+.a-lf{animation:aLf .63s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aLf{from{opacity:0;transform:translateX(-26px);}}
+.a-rt{animation:aRt .63s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aRt{from{opacity:0;transform:translateX(26px);}}
+.a-pop{animation:aPop .56s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aPop{from{opacity:0;transform:scale(.9);}}
+.a-blur{animation:aBlur .77s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aBlur{from{opacity:0;filter:blur(14px);transform:scale(1.04);}}
+.a-wipe{animation:aWipe .7s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aWipe{from{clip-path:inset(0 100% 0 0);}}
+.a-wipe-up{animation:aWipeUp .735s var(--ease) backwards;animation-delay:var(--d,0s);}
+@keyframes aWipeUp{from{clip-path:inset(105% 0 0 0);transform:translateY(14px);}}
+.a-grow{animation:aGrow .805s var(--ease) backwards;animation-delay:var(--d,0s);transform-origin:left center;}
+@keyframes aGrow{from{transform:scaleX(0);}}
+.a-riseh{animation:aRiseH .77s var(--ease) backwards;animation-delay:var(--d,0s);transform-origin:bottom center;}
+@keyframes aRiseH{from{transform:scaleY(0);opacity:.4;}}
+.a-draw{animation:aDraw .98s var(--ease-io) backwards;animation-delay:var(--d,0s);}
+@keyframes aDraw{from{stroke-dashoffset:var(--len,600);}}
+/* The waterfall bar is the reel's signature move: it grows from the point the
+   previous phase ended, so the row reads as a timeline rather than a chart. */
+.a-bar{animation:aBar .62s var(--ease) backwards;animation-delay:var(--d,0s);transform-origin:left center;}
+@keyframes aBar{from{transform:scaleX(0);}}
+
+.pulse-dot{animation:pulseDot 1.5s ease-in-out infinite;}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.12);}}
+.dash-run{animation:dashRun 1.1s linear infinite;}
+@keyframes dashRun{to{stroke-dashoffset:-100;}}
+.blink{animation:blink 1s steps(2) infinite;}
+@keyframes blink{50%{opacity:0;}}
+.spin{animation:spin 1.1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* data-stream words arrive one at a time, driven by the director */
+[data-stream]{color:var(--faint);}
+[data-stream] .w{opacity:.22;transition:opacity .22s var(--ease),color .22s var(--ease);}
+[data-stream] .w.on{opacity:1;color:var(--dim);}
+
+body.paused .stage *{animation-play-state:paused!important;}
+body.paused .scene{transition-duration:0s;}
+
+/* ── product primitives, geometry from the app ─────────── */
+.ico{display:inline-block;}
+.ico svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;display:block;}
+.ico.fill svg{fill:currentColor;stroke:none;}
+
+.h1{font-size:92px;font-weight:700;letter-spacing:-.04em;line-height:1;margin:0;color:var(--ink);}
+.h2{font-size:56px;font-weight:700;letter-spacing:-.03em;line-height:1.06;margin:0;color:var(--ink);}
+.h3{font-size:34px;font-weight:650;letter-spacing:-.02em;line-height:1.18;margin:0;color:var(--ink);}
+.lede{font-size:23px;line-height:1.55;color:var(--dim);margin:0;}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+.kick{font-family:var(--font-mono);font-size:12px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--accent);}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+.panel-head{display:flex;align-items:center;gap:12px;padding:13px 17px;
+  border-bottom:1px solid var(--line);background:var(--raised);
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--faint);}
+.panel-head .sp{flex:1;}
+
+/* transcript */
+.tr{display:flex;gap:13px;line-height:1.95;white-space:pre;}
+.tr-d{font-family:var(--font-mono);font-size:16px;font-weight:600;flex:none;width:13px;}
+.tr-d.c{color:var(--accent);} .tr-d.s{color:var(--faint);}
+.tr-t{font-family:var(--font-mono);font-size:16px;}
+.tr.c .tr-t{color:var(--ink);} .tr.s .tr-t{color:var(--dim);}
+
+/* waterfall */
+.wf{display:grid;grid-template-columns:124px 1fr 86px;gap:18px;align-items:center;padding:6px 0;}
+.wf-n{font-family:var(--font-mono);font-size:14px;color:var(--dim);}
+.wf-tk{position:relative;height:16px;background:var(--line-soft);border-radius:3px;overflow:hidden;}
+.wf-b{position:absolute;top:0;bottom:0;border-radius:3px;}
+.wf-ms{font-family:var(--font-mono);font-size:14px;text-align:right;color:var(--ink);font-weight:500;}
+.wf-key{display:flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:12px;color:var(--faint);}
+.wf-key i{width:10px;height:10px;border-radius:2px;display:block;}
+
+/* capture table */
+.cap-h,.cap-r{display:grid;grid-template-columns:210px 1fr 110px 66px 78px;
+  gap:14px;align-items:center;padding:0 18px;}
+.cap-h{height:36px;background:var(--sunken);border-bottom:1px solid var(--line);}
+.cap-h span{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);}
+.cap-r{height:42px;border-bottom:1px solid var(--line-soft);position:relative;}
+.cap-r.ok{background:var(--ok-row);} .cap-r.warn{background:var(--warn-row);}
+.cap-r.fail{background:var(--fail-row);}
+.cap-r::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;}
+.cap-r.un.ok::before{background:var(--ok);}
+.cap-r.un.warn::before{background:var(--warn);}
+.cap-r.un.fail::before{background:var(--fail);}
+.cap-c{font-family:var(--font-mono);font-size:13px;color:var(--dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cap-s{font-size:14px;color:var(--ink);font-weight:500;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;}
+.cap-s em{font-style:normal;color:var(--faint);font-weight:400;margin-left:9px;}
+.rt{text-align:right;}
+
+/* status marker: filled or hollow, always beside the word */
+.st{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;white-space:nowrap;}
+.st i{width:9px;height:9px;border-radius:2px;border:1.5px solid;display:block;flex:none;}
+.st.ok{color:var(--ok);} .st.ok i{border-color:var(--ok);background:var(--ok);}
+.st.warn{color:var(--warn);} .st.warn i{border-color:var(--warn);background:var(--warn);}
+.st.fail{color:var(--fail);} .st.fail i{border-color:var(--fail);background:var(--fail);}
+.st.idle{color:var(--idle);} .st.idle i{border-color:var(--idle);}
+.st.live{color:var(--accent);} .st.live i{border-color:var(--accent);}
+
+/* readouts */
+.ro-l{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);display:block;margin-bottom:11px;}
+.ro-v{font-family:var(--font-mono);font-size:46px;font-weight:600;letter-spacing:-.03em;line-height:1;color:var(--ink);}
+.ro-u{font-family:var(--font-mono);font-size:17px;color:var(--faint);margin-left:4px;}
+.ro-c{font-size:13px;color:var(--faint);margin-top:10px;display:block;}
+
+/* filter bar */
+.fb{display:flex;align-items:center;gap:11px;padding:12px 15px;
+  border-bottom:1px solid var(--line);background:var(--raised);}
+.fchip{font-family:var(--font-mono);font-size:12.5px;padding:5px 10px;border-radius:5px;
+  color:var(--faint);background:transparent;}
+.fchip.on{background:var(--sunken);color:var(--ink);font-weight:600;}
+.fsearch{flex:1;display:flex;align-items:center;gap:8px;padding:7px 11px;
+  border:1px solid var(--line);border-radius:5px;background:var(--sunken);
+  font-family:var(--font-mono);font-size:13px;color:var(--dim);}
+.caret{display:inline-block;width:1.5px;height:15px;background:var(--accent);vertical-align:-3px;}
+
+/* ── transport ─────────────────────────────────────────── */
+.transport{background:var(--studio-2);border-top:1px solid #141C25;
+  padding:12px 20px 14px;display:flex;flex-direction:column;gap:10px;}
+.track{display:flex;gap:4px;}
+.seg{flex-grow:1;height:3px;border-radius:2px;background:#1A232D;overflow:hidden;cursor:pointer;}
+.seg span{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;}
+.seg.done span{width:100%;background:#2B405A;}
+.tp-row{display:flex;align-items:center;gap:14px;}
+.tp-btns{display:flex;gap:6px;}
+.tp-b{width:32px;height:32px;display:grid;place-items:center;border-radius:6px;
+  background:#0E151C;border:1px solid #1C2632;color:var(--ink);cursor:pointer;
+  transition:background-color .18s,border-color .18s;}
+.tp-b:hover{background:#15202A;border-color:#2A3846;}
+.tp-b .ico{width:15px;height:15px;}
+.tp-b.play{background:var(--accent);border-color:var(--accent);color:#05080B;width:36px;height:36px;}
+.tp-b.play .ico{width:16px;height:16px;}
+.tp-b:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.chapters{display:flex;gap:5px;flex:1;overflow:hidden;}
+.ch{font-family:var(--font-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--studio-dim);background:transparent;border:0;padding:4px 7px;border-radius:4px;
+  cursor:pointer;white-space:nowrap;transition:color .2s,background-color .2s;}
+.ch:hover{color:var(--ink);}
+.ch.on{color:var(--ink);background:#111A23;}
+.tp-time{font-family:var(--font-mono);font-size:11.5px;color:var(--studio-dim);}
+.tp-time b{color:var(--ink);font-weight:500;}
+.tp-keys{font-family:var(--font-mono);font-size:10px;color:#58646F;letter-spacing:.05em;}
+.tp-keys kbd{font:inherit;border:1px solid rgba(255,255,255,.14);border-radius:3px;padding:1px 5px;margin:0 1px;}
+
+/* ── embed contract ────────────────────────────────────────
+   The same flags every reel in public/motion/ answers to, so the
+   portfolio can host any of them without knowing which is which. */
+body.is-embed .studio{grid-template-rows:1fr auto;}
+body.is-bare  .studio{grid-template-rows:1fr;}
+body.is-embed .studio-bar{display:none;}
+body.is-embed .chapters,body.is-embed .tp-keys{display:none;}
+body.is-embed .transport{padding:8px 14px 10px;gap:8px;}
+body.is-embed .tp-row{gap:11px;}
+body.is-embed .tp-b{width:30px;height:30px;}
+body.is-embed .tp-b .ico{width:13px;height:13px;}
+body.is-embed .tp-b.play{width:34px;height:34px;}
+body.is-embed .tp-b.play .ico{width:15px;height:15px;}
+body.is-embed .tp-time{font-size:10.5px;}
+body.is-embed .stage-wrap{padding:0;}
+body.is-bare .studio-bar,body.is-bare .transport{display:none;}
+
+@media (max-width:620px){body.is-embed .tp-time{display:none;}}
+@media (prefers-reduced-motion:reduce){
+  .pulse-dot,.dash-run,.blink,.spin{animation:none!important;}
+}
+</style>
+</head>
+<body>
+<div class="studio">
+
+  <header class="studio-bar">
+    <div class="sb-brand">
+      <i class="ico" data-icon="mark"></i>
+      <span class="sb-name">Postal</span>
+      <span class="sb-tag">Motion Reel</span>
+    </div>
+    <div class="sb-meta">
+      <span>SMTP Mail Transfer Agent</span>
+      <span><b>the-postal.vercel.app</b></span>
+    </div>
+  </header>
+
+  <div class="stage-wrap"><div class="stage-frame"><div class="stage" id="stage">
+
+<!-- ══════════════════ 01 — IDENT ══════════════════ -->
+<section class="scene" data-scene data-name="Ident" data-dur="5200">
+  <svg class="abs" viewBox="0 0 1600 900" style="position:absolute;inset:0;width:100%;height:100%;">
+    <line class="a-draw" style="--len:1600;--d:.10s" x1="0" y1="450" x2="1600" y2="450" stroke="#6BA2F5" stroke-width="1" opacity=".16" stroke-dasharray="1600"/>
+    <line class="a-draw" style="--len:900;--d:.20s" x1="800" y1="0" x2="800" y2="900" stroke="#6BA2F5" stroke-width="1" opacity=".16" stroke-dasharray="900"/>
+    <circle class="a-pop" style="--d:.88s" cx="800" cy="450" r="236" fill="none" stroke="#6BA2F5" stroke-width="1" opacity=".22" stroke-dasharray="5 6"/>
+  </svg>
+
+  <div style="position:absolute;inset:0;display:grid;place-items:center;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:26px;">
+      <!-- the product's own mark: an envelope whose flap is a measured trace -->
+      <svg width="104" height="104" viewBox="0 0 24 24" style="color:var(--accent)">
+        <rect class="a-draw" style="--len:70;--d:.18s" x="1.75" y="4.75" width="20.5" height="14.5" rx="2.25"
+              fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="70"/>
+        <path class="a-draw" style="--len:48;--d:.62s" d="M2.5 7.5 L8 13 L10 10.5 L12.2 15 L14.4 11 L16 13 L21.5 7.5"
+              fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+              stroke-linejoin="round" stroke-dasharray="48"/>
+      </svg>
+
+      <div style="overflow:hidden;">
+        <h1 class="h1 a-wipe-up" style="--d:1.12s;">Postal</h1>
+      </div>
+
+      <div class="kick a-in" style="--d:1.52s;">SMTP · RFC 5321</div>
+
+      <div class="a-in" style="--d:1.86s;display:flex;align-items:center;gap:16px;margin-top:4px;">
+        <span style="width:54px;height:1px;background:var(--line);"></span>
+        <span style="font-size:17px;color:var(--dim);">A mail transfer agent that shows you where every millisecond went</span>
+        <span style="width:54px;height:1px;background:var(--line);"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ 02 — PREMISE ══════════════════ -->
+<section class="scene" data-scene data-name="Premise" data-dur="6600">
+  <div style="position:absolute;left:96px;top:150px;right:96px;">
+    <div class="kick a-up" style="--d:.1s;">The problem</div>
+    <h2 class="h2 a-up" style="--d:.26s;margin-top:22px;max-width:20ch;">One number cannot<br>tell you what broke</h2>
+  </div>
+
+  <!-- the aggregate: a single opaque figure -->
+  <div class="a-pop" style="--d:1.1s;position:absolute;left:96px;top:430px;width:430px;">
+    <div class="panel" style="padding:40px 34px;text-align:center;">
+      <span class="ro-l">what a mail library reports</span>
+      <div class="ro-v" style="font-size:72px;">109<span class="ro-u" style="font-size:24px;">ms</span></div>
+      <span class="ro-c">Delivered. That is the whole report.</span>
+    </div>
+  </div>
+
+  <div class="a-in" style="--d:1.9s;position:absolute;left:566px;top:560px;width:120px;height:1px;background:var(--line);"></div>
+  <div class="a-in" style="--d:1.98s;position:absolute;left:676px;top:552px;color:var(--faint);">
+    <svg width="18" height="18" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+  </div>
+
+  <!-- the same send, resolved -->
+  <div style="position:absolute;left:720px;top:400px;right:96px;">
+    <span class="ro-l a-up" style="--d:2.18s;">what postal records</span>
+    <div style="margin-top:16px;">
+      <div class="wf a-in" style="--d:2.36s;"><span class="wf-n">DNS</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.46s;left:0%;width:10.5%;background:var(--resolve);"></i></span>
+        <span class="wf-ms">11.4</span></div>
+      <div class="wf a-in" style="--d:2.50s;"><span class="wf-n">TCP</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.60s;left:10.5%;width:1.5%;background:var(--connect);"></i></span>
+        <span class="wf-ms">1.6</span></div>
+      <div class="wf a-in" style="--d:2.64s;"><span class="wf-n">TLS</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.74s;left:12%;width:40.6%;background:var(--connect-2);"></i></span>
+        <span class="wf-ms" style="font-weight:600;">44.2</span></div>
+      <div class="wf a-in" style="--d:2.78s;"><span class="wf-n">Banner</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.88s;left:52.6%;width:2%;background:var(--negotiate);"></i></span>
+        <span class="wf-ms">2.2</span></div>
+      <div class="wf a-in" style="--d:2.92s;"><span class="wf-n">EHLO</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:3.02s;left:54.6%;width:1.4%;background:var(--negotiate-2);"></i></span>
+        <span class="wf-ms">1.5</span></div>
+      <div class="wf a-in" style="--d:3.06s;"><span class="wf-n">MAIL FROM</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:3.16s;left:56%;width:.5%;background:var(--envelope);"></i></span>
+        <span class="wf-ms">0.4</span></div>
+      <div class="wf a-in" style="--d:3.20s;"><span class="wf-n">RCPT TO</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:3.30s;left:56.5%;width:.4%;background:var(--envelope-2);"></i></span>
+        <span class="wf-ms">0.3</span></div>
+      <div class="wf a-in" style="--d:3.34s;"><span class="wf-n">DATA</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:3.44s;left:56.9%;width:43.7%;background:var(--transfer);"></i></span>
+        <span class="wf-ms" style="font-weight:600;">47.6</span></div>
+      <div class="wf a-in" style="--d:3.48s;"><span class="wf-n">QUIT</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:3.58s;left:99.4%;width:.6%;background:var(--transfer-2);"></i></span>
+        <span class="wf-ms">0.6</span></div>
+    </div>
+  </div>
+
+  <p class="lede a-up" style="--d:4.3s;position:absolute;left:96px;bottom:150px;right:96px;max-width:none;font-size:21px;"
+     data-stream data-stream-start="4300" data-stream-dur="2000">
+    Nearly half of that send was the TLS handshake and the payload transfer. Two problems, two completely different fixes, and indistinguishable inside a single figure.
+  </p>
+</section>
+
+<!-- ══════════════════ 03 — THE WIRE ══════════════════ -->
+<section class="scene" data-scene data-name="The Wire" data-dur="8200">
+  <div style="position:absolute;left:96px;top:146px;">
+    <div class="kick a-up" style="--d:.1s;">How it sends</div>
+    <h3 class="h3 a-up" style="--d:.24s;margin-top:18px;">The SMTP client is written here,<br>on raw sockets</h3>
+  </div>
+
+  <div class="panel a-pop" style="--d:.62s;position:absolute;left:96px;top:330px;width:900px;">
+    <div class="panel-head">
+      <span>smtp transaction</span><span class="sp"></span>
+      <span class="mono" style="text-transform:none;letter-spacing:0;">mx.example.net:25</span>
+    </div>
+    <div style="padding:22px 26px;">
+      <div class="tr s a-in" style="--d:.90s;"><span class="tr-d s">S</span><span class="tr-t">220 mx.example.net ESMTP ready</span></div>
+      <div class="tr c a-in" style="--d:1.26s;"><span class="tr-d c">C</span><span class="tr-t">EHLO mx.postal.local</span></div>
+      <div class="tr s a-in" style="--d:1.58s;"><span class="tr-d s">S</span><span class="tr-t">250-STARTTLS</span></div>
+      <div class="tr s a-in" style="--d:1.74s;"><span class="tr-d s">S</span><span class="tr-t">250 SIZE 26214400</span></div>
+      <div class="tr c a-in" style="--d:2.06s;"><span class="tr-d c">C</span><span class="tr-t">STARTTLS</span></div>
+      <div class="tr s a-in" style="--d:2.38s;"><span class="tr-d s">S</span><span class="tr-t">220 2.0.0 Ready to start TLS</span></div>
+      <div class="tr c a-in" style="--d:2.74s;"><span class="tr-d c">C</span><span class="tr-t">MAIL FROM:&lt;you@postal.local&gt; SIZE=1841</span></div>
+      <div class="tr s a-in" style="--d:3.02s;"><span class="tr-d s">S</span><span class="tr-t">250 2.1.0 Ok</span></div>
+      <div class="tr c a-in" style="--d:3.30s;"><span class="tr-d c">C</span><span class="tr-t">RCPT TO:&lt;peer@example.net&gt;</span></div>
+      <div class="tr s a-in" style="--d:3.58s;"><span class="tr-d s">S</span><span class="tr-t">250 2.1.5 Ok</span></div>
+      <div class="tr c a-in" style="--d:3.86s;"><span class="tr-d c">C</span><span class="tr-t">DATA</span></div>
+      <div class="tr s a-in" style="--d:4.14s;"><span class="tr-d s">S</span><span class="tr-t">354 End data with &lt;CR&gt;&lt;LF&gt;.&lt;CR&gt;&lt;LF&gt;</span></div>
+      <div class="tr c a-in" style="--d:4.46s;"><span class="tr-d c">C</span><span class="tr-t">&lt;1841 bytes of message body&gt;</span></div>
+      <div class="tr s a-in" style="--d:4.96s;"><span class="tr-d s">S</span><span class="tr-t" style="color:var(--ok);">250 2.0.0 Ok: queued as 4B2f1x</span></div>
+    </div>
+  </div>
+
+  <div style="position:absolute;right:96px;top:330px;width:420px;">
+    <div class="a-rt" style="--d:1.2s;">
+      <span class="ro-l">lines of protocol</span>
+      <div class="ro-v" data-count="690" data-count-start="1200" data-count-dur="1500">0</div>
+      <span class="ro-c">apps/server/src/smtp/client.ts</span>
+    </div>
+    <div style="height:1px;background:var(--line);margin:30px 0;"></div>
+    <div class="a-rt" style="--d:1.9s;">
+      <p class="lede" style="font-size:19px;" data-stream data-stream-start="1900" data-stream-dur="2600">
+        Multi-line reply parsing, ESMTP capability negotiation with a HELO fallback, STARTTLS upgrade, AUTH, and RFC 5321 dot-stuffing.
+      </p>
+    </div>
+    <div style="height:1px;background:var(--line);margin:30px 0;"></div>
+    <div class="a-rt" style="--d:5.0s;">
+      <p class="lede" style="font-size:19px;color:var(--faint);">
+        Owning the socket is what makes every command boundary measurable.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ 04 — THE INK SYSTEM ══════════════════ -->
+<section class="scene" data-scene data-name="Ink System" data-dur="7400">
+  <div style="position:absolute;left:96px;top:146px;right:96px;">
+    <div class="kick a-up" style="--d:.1s;">The colour is a system</div>
+    <h3 class="h3 a-up" style="--d:.24s;margin-top:18px;max-width:30ch;">Every phase owns an ink, and keeps it
+      in every view</h3>
+  </div>
+
+  <!-- five stages, the way a transit map groups stations onto lines -->
+  <div style="position:absolute;left:96px;top:356px;right:96px;display:flex;gap:18px;">
+    <div class="panel a-up" style="--d:.70s;flex:1;padding:24px 22px;">
+      <i style="display:block;width:38px;height:5px;border-radius:3px;background:var(--resolve);margin-bottom:18px;"></i>
+      <div class="mono" style="font-size:14px;color:var(--ink);letter-spacing:.06em;">RESOLVE</div>
+      <div class="mono" style="font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.8;">DNS</div>
+    </div>
+    <div class="panel a-up" style="--d:.80s;flex:1;padding:24px 22px;">
+      <i style="display:block;width:38px;height:5px;border-radius:3px;background:var(--connect);margin-bottom:18px;"></i>
+      <div class="mono" style="font-size:14px;color:var(--ink);letter-spacing:.06em;">CONNECT</div>
+      <div class="mono" style="font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.8;">TCP<br>TLS</div>
+    </div>
+    <div class="panel a-up" style="--d:.90s;flex:1;padding:24px 22px;">
+      <i style="display:block;width:38px;height:5px;border-radius:3px;background:var(--negotiate);margin-bottom:18px;"></i>
+      <div class="mono" style="font-size:14px;color:var(--ink);letter-spacing:.06em;">NEGOTIATE</div>
+      <div class="mono" style="font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.8;">Banner<br>EHLO · AUTH</div>
+    </div>
+    <div class="panel a-up" style="--d:1.0s;flex:1;padding:24px 22px;">
+      <i style="display:block;width:38px;height:5px;border-radius:3px;background:var(--envelope);margin-bottom:18px;"></i>
+      <div class="mono" style="font-size:14px;color:var(--ink);letter-spacing:.06em;">ENVELOPE</div>
+      <div class="mono" style="font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.8;">MAIL FROM<br>RCPT TO</div>
+    </div>
+    <div class="panel a-up" style="--d:1.1s;flex:1;padding:24px 22px;">
+      <i style="display:block;width:38px;height:5px;border-radius:3px;background:var(--transfer);margin-bottom:18px;"></i>
+      <div class="mono" style="font-size:14px;color:var(--ink);letter-spacing:.06em;">TRANSFER</div>
+      <div class="mono" style="font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.8;">DATA<br>QUIT</div>
+    </div>
+  </div>
+
+  <p class="lede a-up" style="--d:1.9s;position:absolute;left:96px;top:600px;right:96px;max-width:none;font-size:20px;"
+     data-stream data-stream-start="1900" data-stream-dur="2400">
+    Ten phases would be ten unrelated hues. Grouping them into five stages, with the second phase of a stage riding at sixty-two percent, keeps adjacent bars distinct while the stage stays recognisable.
+  </p>
+
+  <div class="a-in" style="--d:4.4s;position:absolute;left:96px;bottom:142px;right:96px;
+       display:flex;align-items:center;gap:26px;padding:22px 26px;border-radius:9px;
+       background:var(--accent-wash);border:1px solid var(--accent);">
+    <span class="mono" style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);flex:none;">Result</span>
+    <span style="font-size:19px;color:var(--ink);">You learn the palette once, and every capture after that reads faster.</span>
+  </div>
+</section>
+
+<!-- ══════════════════ 05 — THE CAPTURE ══════════════════ -->
+<section class="scene" data-scene data-name="Capture" data-dur="8000">
+  <div style="position:absolute;left:96px;top:142px;">
+    <div class="kick a-up" style="--d:.1s;">The mailbox</div>
+    <h3 class="h3 a-up" style="--d:.24s;margin-top:18px;">Read as a capture, not a list</h3>
+  </div>
+
+  <div class="panel a-pop" style="--d:.60s;position:absolute;left:96px;top:300px;right:96px;">
+    <div class="fb">
+      <span class="fchip a-in on" style="--d:.80s;">inbox</span>
+      <span class="fchip a-in" style="--d:.86s;">sent</span>
+      <span class="fchip a-in" style="--d:.92s;">archive</span>
+      <span class="fsearch a-in" style="--d:1.0s;">
+        <svg width="14" height="14" viewBox="0 0 24 24" style="fill:none;stroke:var(--faint);stroke-width:2;"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.5-4.5"/></svg>
+        <span data-type="status == deferred" data-type-start="2600" data-type-dur="1100"></span><i class="caret blink"></i>
+      </span>
+      <span class="fchip a-in" style="--d:1.1s;">all</span>
+      <span class="fchip a-in" style="--d:1.14s;color:var(--ok);">sent 24</span>
+      <span class="fchip a-in" style="--d:1.18s;color:var(--warn);">deferred 3</span>
+      <span class="fchip a-in" style="--d:1.22s;color:var(--fail);">failed 2</span>
+    </div>
+
+    <div class="cap-h">
+      <span>to</span><span>subject</span><span>status</span><span>reply</span><span class="rt">time</span>
+    </div>
+
+    <div class="cap-r ok a-dn" style="--d:1.40s;"><span class="cap-c">peer0@example.net</span>
+      <span class="cap-s">Lab report — congestion control<em>Attached, with the trace</em></span>
+      <span class="st ok"><i></i>Delivered</span><span class="cap-c">250</span><span class="cap-c rt">63ms</span></div>
+
+    <div class="cap-r ok a-dn" style="--d:1.52s;"><span class="cap-c">peer1@example.net</span>
+      <span class="cap-s">Re: TLS handshake latency<em>Mostly the handshake</em></span>
+      <span class="st ok"><i></i>Delivered</span><span class="cap-c">250</span><span class="cap-c rt">109ms</span></div>
+
+    <div class="cap-r warn un a-dn" style="--d:1.64s;"><span class="cap-c">peer2@example.net</span>
+      <span class="cap-s">Weekly delivery summary<em>Greylisted, will retry</em></span>
+      <span class="st warn"><i></i>Deferred</span><span class="cap-c">451</span><span class="cap-c rt">120ms</span></div>
+
+    <div class="cap-r ok a-dn" style="--d:1.76s;"><span class="cap-c">peer3@example.net</span>
+      <span class="cap-s">MX failover test results<em>Secondary answered</em></span>
+      <span class="st ok"><i></i>Delivered</span><span class="cap-c">250</span><span class="cap-c rt">87ms</span></div>
+
+    <div class="cap-r fail un a-dn" style="--d:1.88s;"><span class="cap-c">ghost@example.net</span>
+      <span class="cap-s">Attachment throughput benchmark<em>No such recipient</em></span>
+      <span class="st fail"><i></i>Failed</span><span class="cap-c">550</span><span class="cap-c rt">8ms</span></div>
+
+    <div class="cap-r ok a-dn" style="--d:2.00s;"><span class="cap-c">peer4@example.net</span>
+      <span class="cap-s">Queue depth alert threshold<em>Raised to 500</em></span>
+      <span class="st ok"><i></i>Delivered</span><span class="cap-c">250</span><span class="cap-c rt">71ms</span></div>
+
+    <div class="cap-r a-dn" style="--d:2.12s;"><span class="cap-c">peer5@example.net</span>
+      <span class="cap-s">Postmortem: deferred backlog<em>Drafting now</em></span>
+      <span class="st idle"><i></i>Queued</span><span class="cap-c">—</span><span class="cap-c rt">now</span></div>
+
+    <div class="cap-r ok a-dn" style="--d:2.24s;border-bottom:0;"><span class="cap-c">peer6@example.net</span>
+      <span class="cap-s">Re: greylisting on the secondary<em>Resolved after two</em></span>
+      <span class="st ok"><i></i>Delivered</span><span class="cap-c">250</span><span class="cap-c rt">94ms</span></div>
+  </div>
+
+  <p class="lede a-up" style="--d:4.4s;position:absolute;left:96px;bottom:74px;right:96px;max-width:none;font-size:20px;"
+     data-stream data-stream-start="4400" data-stream-dur="2300">
+    Rows are tinted by reply class, columns that hold measurements are monospaced and aligned, and outcome is never colour alone: the word and a filled or hollow marker ride with it.
+  </p>
+</section>
+
+<!-- ══════════════════ 06 — ONE MESSAGE ══════════════════ -->
+<section class="scene" data-scene data-name="One Message" data-dur="9000">
+  <div style="position:absolute;left:96px;top:142px;">
+    <div class="kick a-up" style="--d:.1s;">Open one</div>
+    <h3 class="h3 a-up" style="--d:.24s;margin-top:18px;">Every attempt, with the trace it carried</h3>
+  </div>
+
+  <div class="panel a-lf" style="--d:.62s;position:absolute;left:96px;top:306px;width:760px;">
+    <div class="panel-head"><span>message</span><span class="sp"></span>
+      <span class="st ok"><i></i>Delivered</span></div>
+    <div style="padding:26px 28px;">
+      <div style="display:grid;grid-template-columns:104px 1fr;gap:9px 16px;font-size:15px;">
+        <span class="mono" style="color:var(--faint);">From</span><span class="mono" style="color:var(--dim);">demo@postal.local</span>
+        <span class="mono" style="color:var(--faint);">To</span><span class="mono" style="color:var(--dim);">peer@example.net</span>
+        <span class="mono" style="color:var(--faint);">Subject</span><span style="color:var(--ink);">Lab report — congestion control measurements</span>
+        <span class="mono" style="color:var(--faint);">Message-ID</span><span class="mono" style="color:var(--dim);font-size:13px;">&lt;b4d5c75d-c87c@postal.local&gt;</span>
+      </div>
+      <div style="height:1px;background:var(--line);margin:24px 0;"></div>
+      <div style="display:grid;grid-template-columns:104px 1fr;gap:9px 16px;font-size:15px;">
+        <span class="mono" style="color:var(--faint);">Peer</span><span class="mono" style="color:var(--dim);">mx1.example.net (203.0.113.25:25)</span>
+        <span class="mono" style="color:var(--faint);">Transport</span><span class="mono" style="color:var(--dim);">TLSv1.3 · TLS_AES_256_GCM_SHA384</span>
+        <span class="mono" style="color:var(--faint);">Payload</span><span class="mono" style="color:var(--dim);">1.8 KB at 1434 kbps</span>
+        <span class="mono" style="color:var(--faint);">Reply</span><span class="mono" style="color:var(--ok);">250 2.0.0 Ok: queued as 4B2f1x</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel a-rt" style="--d:.80s;position:absolute;right:96px;top:306px;width:620px;">
+    <div class="panel-head"><span>smtp transaction</span><span class="sp"></span>
+      <span class="mono" style="text-transform:none;letter-spacing:0;" data-count="109" data-count-start="1100" data-count-dur="1700" data-count-suffix=" ms">0 ms</span></div>
+    <div style="padding:22px 24px;">
+      <div class="wf a-in" style="--d:1.20s;"><span class="wf-n">DNS</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.28s;left:0%;width:10.5%;background:var(--resolve);"></i></span><span class="wf-ms">11.4</span></div>
+      <div class="wf a-in" style="--d:1.34s;"><span class="wf-n">TCP</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.42s;left:10.5%;width:1.5%;background:var(--connect);"></i></span><span class="wf-ms">1.6</span></div>
+      <div class="wf a-in" style="--d:1.48s;"><span class="wf-n">TLS</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.56s;left:12%;width:40.6%;background:var(--connect-2);"></i></span><span class="wf-ms" style="font-weight:600;">44.2</span></div>
+      <div class="wf a-in" style="--d:1.62s;"><span class="wf-n">Banner</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.70s;left:52.6%;width:2%;background:var(--negotiate);"></i></span><span class="wf-ms">2.2</span></div>
+      <div class="wf a-in" style="--d:1.76s;"><span class="wf-n">EHLO</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.84s;left:54.6%;width:1.4%;background:var(--negotiate-2);"></i></span><span class="wf-ms">1.5</span></div>
+      <div class="wf a-in" style="--d:1.90s;"><span class="wf-n">MAIL FROM</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.98s;left:56%;width:.5%;background:var(--envelope);"></i></span><span class="wf-ms">0.4</span></div>
+      <div class="wf a-in" style="--d:2.04s;"><span class="wf-n">RCPT TO</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.12s;left:56.5%;width:.4%;background:var(--envelope-2);"></i></span><span class="wf-ms">0.3</span></div>
+      <div class="wf a-in" style="--d:2.18s;"><span class="wf-n">DATA</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.26s;left:56.9%;width:43.7%;background:var(--transfer);"></i></span><span class="wf-ms" style="font-weight:600;">47.6</span></div>
+      <div class="wf a-in" style="--d:2.32s;"><span class="wf-n">QUIT</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.40s;left:99.4%;width:.6%;background:var(--transfer-2);"></i></span><span class="wf-ms">0.6</span></div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);">
+        <span class="wf-key a-in" style="--d:2.70s;"><i style="background:var(--resolve)"></i>Resolve</span>
+        <span class="wf-key a-in" style="--d:2.76s;"><i style="background:var(--connect)"></i>Connect</span>
+        <span class="wf-key a-in" style="--d:2.82s;"><i style="background:var(--negotiate)"></i>Negotiate</span>
+        <span class="wf-key a-in" style="--d:2.88s;"><i style="background:var(--envelope)"></i>Envelope</span>
+        <span class="wf-key a-in" style="--d:2.94s;"><i style="background:var(--transfer)"></i>Transfer</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="lede a-up" style="--d:3.6s;position:absolute;left:96px;bottom:70px;right:96px;max-width:none;font-size:20px;"
+     data-stream data-stream-start="3600" data-stream-dur="2400">
+    Bars start where the previous phase ended, so the row is a timeline of the conversation rather than an unordered chart of its parts.
+  </p>
+</section>
+
+<!-- ══════════════════ 07 — RETRY SEMANTICS ══════════════════ -->
+<section class="scene" data-scene data-name="Retry" data-dur="8400">
+  <div style="position:absolute;left:96px;top:142px;right:96px;">
+    <div class="kick a-up" style="--d:.1s;">What a mail server must get right</div>
+    <h3 class="h3 a-up" style="--d:.24s;margin-top:18px;">The reply code decides everything</h3>
+  </div>
+
+  <!-- 4xx lane -->
+  <div class="panel a-lf" style="--d:.70s;position:absolute;left:96px;top:320px;width:660px;border-color:var(--warn);">
+    <div class="panel-head" style="background:var(--warn-row);color:var(--warn);"><span>transient · 4xx</span></div>
+    <div style="padding:26px 28px;">
+      <div class="mono a-in" style="--d:1.0s;font-size:16px;color:var(--warn);">451 4.7.1 Greylisted, try again later</div>
+      <p class="lede a-in" style="--d:1.24s;font-size:17px;margin-top:16px;">The server may simply be busy. Bouncing here would discard mail that is perfectly deliverable.</p>
+      <div style="height:1px;background:var(--line);margin:22px 0;"></div>
+      <div class="mono" style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:14px;">retry schedule · exponential, full jitter</div>
+      <div style="display:flex;gap:9px;align-items:flex-end;height:74px;">
+        <div class="a-riseh" style="--d:1.6s;flex:1;height:22%;background:var(--warn);opacity:.55;border-radius:3px 3px 0 0;"></div>
+        <div class="a-riseh" style="--d:1.72s;flex:1;height:38%;background:var(--warn);opacity:.65;border-radius:3px 3px 0 0;"></div>
+        <div class="a-riseh" style="--d:1.84s;flex:1;height:58%;background:var(--warn);opacity:.78;border-radius:3px 3px 0 0;"></div>
+        <div class="a-riseh" style="--d:1.96s;flex:1;height:78%;background:var(--warn);opacity:.9;border-radius:3px 3px 0 0;"></div>
+        <div class="a-riseh" style="--d:2.08s;flex:1;height:100%;background:var(--warn);border-radius:3px 3px 0 0;"></div>
+      </div>
+      <div class="mono a-in" style="--d:2.3s;display:flex;justify-content:space-between;font-size:12px;color:var(--faint);margin-top:9px;">
+        <span>15s</span><span>30s</span><span>1m</span><span>2m</span><span>4m</span>
+      </div>
+      <div class="a-in" style="--d:2.6s;margin-top:20px;"><span class="st warn"><i></i>Deferred · attempt 2 of 5</span></div>
+    </div>
+  </div>
+
+  <!-- 5xx lane -->
+  <div class="panel a-rt" style="--d:.86s;position:absolute;right:96px;top:320px;width:660px;border-color:var(--fail);">
+    <div class="panel-head" style="background:var(--fail-row);color:var(--fail);"><span>permanent · 5xx</span></div>
+    <div style="padding:26px 28px;">
+      <div class="mono a-in" style="--d:1.16s;font-size:16px;color:var(--fail);">550 5.1.1 Recipient address rejected</div>
+      <p class="lede a-in" style="--d:1.40s;font-size:17px;margin-top:16px;">That is the domain's final answer. Retrying it would burn every attempt on a guaranteed failure.</p>
+      <div style="height:1px;background:var(--line);margin:22px 0;"></div>
+      <div class="mono" style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:14px;">retry schedule · none</div>
+      <div style="display:flex;gap:9px;align-items:flex-end;height:74px;">
+        <div class="a-riseh" style="--d:1.8s;flex:1;height:100%;background:var(--fail);border-radius:3px 3px 0 0;"></div>
+        <div style="flex:1;height:5px;background:var(--line-soft);border-radius:3px;"></div>
+        <div style="flex:1;height:5px;background:var(--line-soft);border-radius:3px;"></div>
+        <div style="flex:1;height:5px;background:var(--line-soft);border-radius:3px;"></div>
+        <div style="flex:1;height:5px;background:var(--line-soft);border-radius:3px;"></div>
+      </div>
+      <div class="mono a-in" style="--d:2.3s;display:flex;justify-content:space-between;font-size:12px;color:var(--faint);margin-top:9px;">
+        <span>now</span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="a-in" style="--d:2.6s;margin-top:20px;"><span class="st fail"><i></i>Failed · bounced immediately</span></div>
+    </div>
+  </div>
+
+  <p class="lede a-up" style="--d:3.4s;position:absolute;left:96px;bottom:70px;right:96px;max-width:none;font-size:20px;"
+     data-stream data-stream-start="3400" data-stream-dur="2600">
+    Jitter matters more than it looks. Without it, every message deferred in the same window retries at the same instant, and the recovering server is hit by the whole backlog at once.
+  </p>
+</section>
+
+<!-- ══════════════════ 08 — TELEMETRY ══════════════════ -->
+<section class="scene" data-scene data-name="Telemetry" data-dur="8000">
+  <div style="position:absolute;left:96px;top:142px;">
+    <div class="kick a-up" style="--d:.1s;">Across every send</div>
+    <h3 class="h3 a-up" style="--d:.24s;margin-top:18px;">Measured, not simulated</h3>
+  </div>
+
+  <div style="position:absolute;left:96px;top:300px;right:96px;display:flex;gap:18px;">
+    <div class="panel a-up" style="--d:.60s;flex:1;padding:24px 22px;">
+      <span class="ro-l">delivery rate</span>
+      <div class="ro-v" style="color:var(--ok);" data-count="853" data-count-start="700" data-count-dur="1600" data-count-decimal="1" data-count-suffix="%">0%</div>
+      <span class="ro-c">29 delivered · 5 failed</span>
+    </div>
+    <div class="panel a-up" style="--d:.70s;flex:1;padding:24px 22px;">
+      <span class="ro-l">median transaction</span>
+      <div class="ro-v"><span data-count="197" data-count-start="800" data-count-dur="1600">0</span><span class="ro-u">ms</span></div>
+      <span class="ro-c">p95 241 ms · p99 258 ms</span>
+    </div>
+    <div class="panel a-up" style="--d:.80s;flex:1;padding:24px 22px;">
+      <span class="ro-l">in flight</span>
+      <div class="ro-v" style="color:var(--warn);" data-count="6" data-count-start="900" data-count-dur="1200">0</div>
+      <span class="ro-c">3 queued · 3 awaiting retry</span>
+    </div>
+    <div class="panel a-up" style="--d:.90s;flex:1;padding:24px 22px;">
+      <span class="ro-l">received</span>
+      <div class="ro-v" data-count="12" data-count-start="1000" data-count-dur="1300">0</div>
+      <span class="ro-c">inbound over the listener</span>
+    </div>
+  </div>
+
+  <div class="panel a-up" style="--d:1.3s;position:absolute;left:96px;top:508px;width:860px;">
+    <div class="panel-head"><span>mean duration per phase</span></div>
+    <div style="padding:22px 26px;">
+      <div class="wf a-in" style="--d:1.6s;"><span class="wf-n">DNS</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.68s;left:0;width:19%;background:var(--resolve);"></i></span><span class="wf-ms">11.6</span></div>
+      <div class="wf a-in" style="--d:1.72s;"><span class="wf-n">TCP</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.80s;left:0;width:31%;background:var(--connect);"></i></span><span class="wf-ms">19.3</span></div>
+      <div class="wf a-in" style="--d:1.84s;"><span class="wf-n">TLS</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:1.92s;left:0;width:71%;background:var(--connect-2);"></i></span><span class="wf-ms">44.0</span></div>
+      <div class="wf a-in" style="--d:1.96s;"><span class="wf-n">Banner</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.04s;left:0;width:35%;background:var(--negotiate);"></i></span><span class="wf-ms">22.0</span></div>
+      <div class="wf a-in" style="--d:2.08s;"><span class="wf-n">EHLO</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.16s;left:0;width:15%;background:var(--negotiate-2);"></i></span><span class="wf-ms">9.2</span></div>
+      <div class="wf a-in" style="--d:2.20s;"><span class="wf-n">MAIL FROM</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.28s;left:0;width:12%;background:var(--envelope);"></i></span><span class="wf-ms">7.5</span></div>
+      <div class="wf a-in" style="--d:2.32s;"><span class="wf-n">RCPT TO</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.40s;left:0;width:17%;background:var(--envelope-2);"></i></span><span class="wf-ms">10.8</span></div>
+      <div class="wf a-in" style="--d:2.44s;"><span class="wf-n">DATA</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.52s;left:0;width:100%;background:var(--transfer);"></i></span><span class="wf-ms" style="font-weight:600;">62.5</span></div>
+      <div class="wf a-in" style="--d:2.56s;"><span class="wf-n">QUIT</span>
+        <span class="wf-tk"><i class="wf-b a-bar" style="--d:2.64s;left:0;width:8%;background:var(--transfer-2);"></i></span><span class="wf-ms">5.3</span></div>
+    </div>
+  </div>
+
+  <div class="panel a-up" style="--d:1.5s;position:absolute;right:96px;top:508px;width:620px;">
+    <div class="panel-head">
+      <i class="pulse-dot" style="width:7px;height:7px;border-radius:50%;background:var(--ok);display:block;"></i>
+      <span>live activity</span></div>
+    <div style="padding:18px 24px;font-family:var(--font-mono);font-size:13.5px;line-height:2.25;">
+      <div class="a-in" style="--d:3.0s;color:var(--dim);"><span style="color:var(--faint);">21:28:14</span>&nbsp;&nbsp;Queued “Lab report”</div>
+      <div class="a-in" style="--d:3.3s;color:var(--dim);"><span style="color:var(--faint);">21:28:14</span>&nbsp;&nbsp;Opening SMTP session</div>
+      <div class="a-in" style="--d:3.6s;color:var(--ok);"><span style="color:var(--faint);">21:28:15</span>&nbsp;&nbsp;Delivered in 63 ms via mx1</div>
+      <div class="a-in" style="--d:3.9s;color:var(--warn);"><span style="color:var(--faint);">21:28:19</span>&nbsp;&nbsp;Deferred — 451 greylisted</div>
+      <div class="a-in" style="--d:4.2s;color:var(--dim);"><span style="color:var(--faint);">21:28:22</span>&nbsp;&nbsp;Received from sender2</div>
+      <div class="a-in" style="--d:4.5s;color:var(--fail);"><span style="color:var(--faint);">21:28:26</span>&nbsp;&nbsp;Failed — 550 user unknown</div>
+      <div class="a-in" style="--d:4.8s;color:var(--ok);"><span style="color:var(--faint);">21:28:31</span>&nbsp;&nbsp;Delivered in 71 ms via mx1</div>
+    </div>
+  </div>
+
+  <div class="mono a-in" style="--d:5.4s;position:absolute;left:96px;bottom:150px;right:96px;
+       font-size:14px;color:var(--faint);display:flex;gap:30px;">
+    <span>GET /api/v1/stats/summary</span><span>·</span>
+    <span>$percentile over embedded attempt documents</span><span>·</span>
+    <span>live over SSE</span>
+  </div>
+</section>
+
+<!-- ══════════════════ 09 — BOTH THEMES ══════════════════ -->
+<section class="scene" data-scene data-name="Both Themes" data-dur="5600" data-theme-flip="2600">
+  <div style="position:absolute;left:96px;top:150px;right:96px;">
+    <div class="kick a-up" style="--d:.1s;">Light and dark</div>
+    <h3 class="h3 a-up" style="--d:.24s;margin-top:18px;">Neither is a tinted copy of the other</h3>
+  </div>
+
+  <!-- the same waterfall, re-inked for whichever mode the sheet is in -->
+  <div class="panel a-pop tc" style="--d:.66s;position:absolute;left:96px;top:330px;right:96px;">
+    <div class="panel-head tc"><span>smtp transaction</span><span class="sp"></span><span class="mono" style="text-transform:none;letter-spacing:0;">109 ms</span></div>
+    <div style="padding:26px 30px;">
+      <div class="wf"><span class="wf-n tc">DNS</span><span class="wf-tk tc"><i class="wf-b" style="left:0%;width:10.5%;background:var(--resolve);"></i></span><span class="wf-ms tc">11.4</span></div>
+      <div class="wf"><span class="wf-n tc">TCP</span><span class="wf-tk tc"><i class="wf-b" style="left:10.5%;width:1.5%;background:var(--connect);"></i></span><span class="wf-ms tc">1.6</span></div>
+      <div class="wf"><span class="wf-n tc">TLS</span><span class="wf-tk tc"><i class="wf-b" style="left:12%;width:40.6%;background:var(--connect-2);"></i></span><span class="wf-ms tc" style="font-weight:600;">44.2</span></div>
+      <div class="wf"><span class="wf-n tc">Banner</span><span class="wf-tk tc"><i class="wf-b" style="left:52.6%;width:2%;background:var(--negotiate);"></i></span><span class="wf-ms tc">2.2</span></div>
+      <div class="wf"><span class="wf-n tc">EHLO</span><span class="wf-tk tc"><i class="wf-b" style="left:54.6%;width:1.4%;background:var(--negotiate-2);"></i></span><span class="wf-ms tc">1.5</span></div>
+      <div class="wf"><span class="wf-n tc">MAIL FROM</span><span class="wf-tk tc"><i class="wf-b" style="left:56%;width:.5%;background:var(--envelope);"></i></span><span class="wf-ms tc">0.4</span></div>
+      <div class="wf"><span class="wf-n tc">RCPT TO</span><span class="wf-tk tc"><i class="wf-b" style="left:56.5%;width:.4%;background:var(--envelope-2);"></i></span><span class="wf-ms tc">0.3</span></div>
+      <div class="wf"><span class="wf-n tc">DATA</span><span class="wf-tk tc"><i class="wf-b" style="left:56.9%;width:43.7%;background:var(--transfer);"></i></span><span class="wf-ms tc" style="font-weight:600;">47.6</span></div>
+      <div class="wf"><span class="wf-n tc">QUIT</span><span class="wf-tk tc"><i class="wf-b" style="left:99.4%;width:.6%;background:var(--transfer-2);"></i></span><span class="wf-ms tc">0.6</span></div>
+    </div>
+  </div>
+
+  <p class="lede a-up tc" style="--d:3.9s;position:absolute;left:96px;bottom:150px;right:96px;max-width:none;font-size:20px;">
+    The phase inks are tuned twice, so a capture stays legible under either ground.
+  </p>
+</section>
+
+<!-- ══════════════════ 10 — THE SYSTEM ══════════════════ -->
+<section class="scene" data-scene data-name="The System" data-dur="7600">
+  <div style="position:absolute;left:96px;top:146px;">
+    <div class="kick a-up" style="--d:.1s;">Running live</div>
+    <h3 class="h3 a-up" style="--d:.24s;margin-top:18px;">Three long-lived subsystems, one process</h3>
+  </div>
+
+  <svg viewBox="0 0 1600 900" style="position:absolute;inset:0;width:100%;height:100%;">
+    <g stroke="var(--line)" stroke-width="1.4" fill="none">
+      <path class="a-draw" style="--len:200;--d:1.5s" d="M372 452 H472" stroke-dasharray="200"/>
+      <path class="a-draw" style="--len:200;--d:1.62s" d="M700 452 H800" stroke-dasharray="200"/>
+      <path class="a-draw" style="--len:200;--d:1.74s" d="M1028 452 H1128" stroke-dasharray="200"/>
+      <path class="a-draw" style="--len:260;--d:1.9s" d="M864 540 V640 H1128" stroke-dasharray="260"/>
+      <path class="a-draw" style="--len:260;--d:2.0s" d="M864 364 V264 H1128" stroke-dasharray="260"/>
+    </g>
+    <g stroke="var(--accent)" stroke-width="1.6" fill="none" opacity=".85">
+      <path class="dash-run" d="M372 452 H472" stroke-dasharray="7 9"/>
+      <path class="dash-run" d="M700 452 H800" stroke-dasharray="7 9"/>
+      <path class="dash-run" d="M1028 452 H1128" stroke-dasharray="7 9"/>
+    </g>
+  </svg>
+
+  <div class="panel a-pop" style="--d:.80s;position:absolute;left:96px;top:392px;width:276px;padding:22px;">
+    <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);">Browser</div>
+    <div style="font-size:19px;font-weight:650;color:var(--ink);margin-top:9px;">Next.js client</div>
+    <div class="mono" style="font-size:12.5px;color:var(--dim);margin-top:8px;">Vercel</div>
+  </div>
+
+  <div class="panel a-pop" style="--d:.98s;position:absolute;left:472px;top:356px;width:228px;padding:22px;border-color:var(--accent);">
+    <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);">API</div>
+    <div style="font-size:19px;font-weight:650;color:var(--ink);margin-top:9px;">Fastify</div>
+    <div class="mono" style="font-size:12.5px;color:var(--dim);margin-top:8px;">Zod · OpenAPI</div>
+  </div>
+
+  <div class="panel a-pop" style="--d:1.12s;position:absolute;left:800px;top:356px;width:228px;padding:22px;border-color:var(--accent);">
+    <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);">Worker</div>
+    <div style="font-size:19px;font-weight:650;color:var(--ink);margin-top:9px;">Delivery queue</div>
+    <div class="mono" style="font-size:12.5px;color:var(--dim);margin-top:8px;">BullMQ · Redis</div>
+  </div>
+
+  <div class="panel a-pop" style="--d:1.26s;position:absolute;left:1128px;top:356px;width:276px;padding:22px;border-color:var(--transfer);">
+    <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--transfer);">Wire</div>
+    <div style="font-size:19px;font-weight:650;color:var(--ink);margin-top:9px;">SMTP client</div>
+    <div class="mono" style="font-size:12.5px;color:var(--dim);margin-top:8px;">net · tls sockets</div>
+  </div>
+
+  <div class="panel a-pop" style="--d:1.40s;position:absolute;left:1128px;top:196px;width:276px;padding:18px 22px;">
+    <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);">Ingress</div>
+    <div style="font-size:17px;font-weight:650;color:var(--ink);margin-top:7px;">Inbound daemon · 2525</div>
+  </div>
+
+  <div class="panel a-pop" style="--d:1.52s;position:absolute;left:1128px;top:596px;width:276px;padding:18px 22px;">
+    <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);">Store</div>
+    <div style="font-size:17px;font-weight:650;color:var(--ink);margin-top:7px;">MongoDB Atlas</div>
+  </div>
+
+  <div class="mono a-in" style="--d:2.6s;position:absolute;left:96px;bottom:150px;right:96px;
+       display:flex;gap:28px;font-size:13.5px;color:var(--faint);flex-wrap:wrap;">
+    <span>AWS EC2 · ap-south-1</span><span>·</span>
+    <span>Caddy, automatic TLS</span><span>·</span>
+    <span>57 tests against a real MongoDB and a real SMTP peer</span>
+  </div>
+</section>
+
+<!-- ══════════════════ 11 — CREDITS ══════════════════ -->
+<section class="scene" data-scene data-name="Credits" data-dur="6600">
+  <div style="position:absolute;inset:0;display:grid;place-items:center;">
+    <div style="text-align:center;max-width:1100px;">
+      <svg width="64" height="64" viewBox="0 0 24 24" class="a-blur" style="--d:.1s;color:var(--accent);margin-bottom:30px;">
+        <rect x="1.75" y="4.75" width="20.5" height="14.5" rx="2.25" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M2.5 7.5 L8 13 L10 10.5 L12.2 15 L14.4 11 L16 13 L21.5 7.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+
+      <h2 class="h2 a-wipe-up" style="--d:.46s;">Postal</h2>
+
+      <p class="lede a-up" style="--d:.80s;margin:22px auto 0;max-width:46ch;font-size:21px;">
+        A self-hosted SMTP mail transfer agent with per-transaction network telemetry.
+      </p>
+
+      <div class="a-in" style="--d:1.2s;display:flex;justify-content:center;gap:0;margin-top:46px;
+           border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+        <div style="padding:24px 34px;border-right:1px solid var(--line);">
+          <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);">Protocol</div>
+          <div class="mono" style="font-size:15px;color:var(--ink);margin-top:9px;">RFC 5321 · 3207 · 4616</div>
+        </div>
+        <div style="padding:24px 34px;border-right:1px solid var(--line);">
+          <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);">Server</div>
+          <div class="mono" style="font-size:15px;color:var(--ink);margin-top:9px;">TypeScript · Fastify · Mongo</div>
+        </div>
+        <div style="padding:24px 34px;border-right:1px solid var(--line);">
+          <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);">Queue</div>
+          <div class="mono" style="font-size:15px;color:var(--ink);margin-top:9px;">BullMQ · Redis</div>
+        </div>
+        <div style="padding:24px 34px;">
+          <div class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);">Deploy</div>
+          <div class="mono" style="font-size:15px;color:var(--ink);margin-top:9px;">Docker · AWS · Vercel</div>
+        </div>
+      </div>
+
+      <div class="a-up" style="--d:1.7s;margin-top:44px;display:flex;align-items:center;justify-content:center;gap:14px;">
+        <span style="width:56px;height:1px;background:var(--line);"></span>
+        <span class="mono" style="font-size:17px;color:var(--accent);">the-postal.vercel.app</span>
+        <span style="width:56px;height:1px;background:var(--line);"></span>
+      </div>
+
+      <div class="mono a-in" style="--d:2.1s;margin-top:18px;font-size:12px;letter-spacing:.16em;
+           text-transform:uppercase;color:var(--faint);">Built end to end · Fiza Amjad</div>
+    </div>
+  </div>
+</section>
+
+  <i id="playhead"></i>
+
+  <!-- ── titleblock: the sheet's own annotation, above and below the plate ── -->
+  <div class="tb tb-head">
+    <div class="tb-brand">
+      <i class="ico" data-icon="mark"></i>
+      <div>
+        <div class="tb-word">Postal</div>
+        <div class="tb-sub">SMTP Mail Transfer Agent</div>
+      </div>
+    </div>
+    <div class="tb-r">
+      <div class="tb-scene" id="tbScene">Ident</div>
+      <div class="tb-fig" id="tbFig">Fig. 01 / 11</div>
+    </div>
+    <div class="tb-rule"></div>
+  </div>
+
+  <div class="tb tb-foot">
+    <div class="tb-note">Computer Networks · Final Project</div>
+    <div class="tb-note">the-postal.vercel.app</div>
+    <div class="tb-rule"></div>
+  </div>
+
+  </div></div></div><!-- /.stage /.stage-frame /.stage-wrap -->
+
+  <footer class="transport">
+    <div class="track" id="track"></div>
+    <div class="tp-row">
+      <div class="tp-btns">
+        <button class="tp-b" id="btnPrev" title="Previous scene (←)"><i class="ico" data-icon="skip-back"></i></button>
+        <button class="tp-b play" id="btnPlay" title="Play / pause (Space)"><i class="ico fill" data-icon="pause"></i></button>
+        <button class="tp-b" id="btnNext" title="Next scene (→)"><i class="ico" data-icon="skip-fwd"></i></button>
+        <button class="tp-b" id="btnReplay" title="Restart (R)"><i class="ico" data-icon="rotate"></i></button>
+      </div>
+      <div class="chapters" id="chapters"></div>
+      <div class="tp-time"><b id="tCur">0:00</b> / <span id="tTot">0:00</span></div>
+      <div class="tp-btns">
+        <button class="tp-b" id="btnBare" title="Hide controls (H)"><i class="ico" data-icon="eye-off"></i></button>
+        <button class="tp-b" id="btnFull" title="Fullscreen (F)"><i class="ico" data-icon="expand"></i></button>
+      </div>
+    </div>
+    <div class="tp-keys"><kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> scene · <kbd>R</kbd> restart · <kbd>H</kbd> hide UI · <kbd>F</kbd> fullscreen</div>
+  </footer>
+
+</div>
+
+<style id="runtime">
+  /* Scene animations are gated so every activation restarts them cleanly. */
+  .scene:not(.is-active) *{animation:none !important;}
+</style>
+
+<script>
+(function(){
+"use strict";
+
+/* ─────────────── Icons (24x24, one monoline family) ─────────────── */
+var P = {
+  mark:'<rect x="1.75" y="4.75" width="20.5" height="14.5" rx="2.25"/><path d="M2.5 7.5 L8 13 L10 10.5 L12.2 15 L14.4 11 L16 13 L21.5 7.5"/>',
+  play:'<polygon points="6 3 20 12 6 21 6 3"/>',
+  pause:'<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
+  'skip-back':'<polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/>',
+  'skip-fwd':'<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/>',
+  rotate:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  'eye-off':'<path d="M10.73 5.08a10.74 10.74 0 0 1 11.21 6.57 1 1 0 0 1 0 .7 10.8 10.8 0 0 1-1.45 2.49"/><path d="M14.08 14.16a3 3 0 0 1-4.24-4.24"/><path d="M17.48 17.5a10.75 10.75 0 0 1-15.42-5.15 1 1 0 0 1 0-.7 10.75 10.75 0 0 1 4.45-5.14"/><path d="m2 2 20 20"/>',
+  expand:'<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'
+};
+function svg(inner, cls){
+  return '<svg viewBox="0 0 24 24"' + (cls ? ' class="' + cls + '"' : '') + '>' + inner + '</svg>';
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-icon]'), function(el){
+  var k = el.getAttribute('data-icon');
+  if (P[k]) el.innerHTML = svg(P[k]);
+});
+
+/* ─────────────── Hydrate stream text into words ─────────────── */
+function hydrateStream(root){
+  var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  var nodes = [], n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  nodes.forEach(function(node){
+    var parts = node.nodeValue.split(/(\s+)/), frag = document.createDocumentFragment();
+    parts.forEach(function(p){
+      if (!p) return;
+      if (/^\s+$/.test(p)) frag.appendChild(document.createTextNode(p));
+      else { var s = document.createElement('span'); s.className = 'w'; s.textContent = p; frag.appendChild(s); }
+    });
+    node.parentNode.replaceChild(frag, node);
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-stream]'), hydrateStream);
+
+/* ─────────────── Director ─────────────── */
+var stage   = document.getElementById('stage');
+var scenes  = Array.prototype.slice.call(stage.querySelectorAll('[data-scene]'));
+var durs    = scenes.map(function(s){ return parseInt(s.dataset.dur, 10); });
+var total   = durs.reduce(function(a, b){ return a + b; }, 0);
+var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+var idx = 0, t = 0, last = 0, playing = !reduced, stopAt = 0;
+
+var cache = scenes.map(function(sc){
+  return {
+    type:   Array.prototype.slice.call(sc.querySelectorAll('[data-type]')),
+    count:  Array.prototype.slice.call(sc.querySelectorAll('[data-count]')),
+    stream: Array.prototype.slice.call(sc.querySelectorAll('[data-stream]')).map(function(el){
+      return { el: el, words: Array.prototype.slice.call(el.querySelectorAll('.w')) };
+    }),
+    flip: parseInt(sc.dataset.themeFlip, 10) || 0
+  };
+});
+
+function clamp(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+
+function tickDynamics(i, ms){
+  var c = cache[i];
+
+  c.type.forEach(function(el){
+    var txt = el.getAttribute('data-type');
+    var st  = +el.getAttribute('data-type-start') || 0;
+    var du  = +el.getAttribute('data-type-dur') || 1200;
+    var n   = Math.round(clamp((ms - st) / du) * txt.length);
+    if (el.textContent !== txt.slice(0, n)) el.textContent = txt.slice(0, n);
+  });
+
+  c.count.forEach(function(el){
+    var target = +el.getAttribute('data-count');
+    var st  = +el.getAttribute('data-count-start') || 0;
+    var du  = +el.getAttribute('data-count-dur') || 1500;
+    var suf = el.getAttribute('data-count-suffix') || '';
+    var dec = +el.getAttribute('data-count-decimal') || 0;
+    var v   = easeOut(clamp((ms - st) / du)) * target;
+    /* A rate like 85.3% is authored as 853 with one decimal place, so the
+       counter still tweens over integers and lands on the exact figure. */
+    var s   = dec ? (v / Math.pow(10, dec)).toFixed(dec) : String(Math.round(v));
+    if (el.textContent !== s + suf) el.textContent = s + suf;
+  });
+
+  c.stream.forEach(function(o){
+    var st = +o.el.getAttribute('data-stream-start') || 0;
+    var du = +o.el.getAttribute('data-stream-dur') || 3000;
+    var n  = Math.round(clamp((ms - st) / du) * o.words.length);
+    for (var k = 0; k < o.words.length; k++){
+      var on = k < n;
+      if (o.words[k].classList.contains('on') !== on) o.words[k].classList.toggle('on', on);
+    }
+  });
+
+  /* Scene 09 flips the sheet between the product's two modes. */
+  if (c.flip) stage.classList.toggle('lightmode', ms >= c.flip);
+}
+
+/* Render the active scene at an exact offset without waiting for time to pass:
+   shift every animation-delay back by `ms` and hold it paused. Used by ?stop=. */
+function seekScene(ms){
+  var sc = scenes[idx];
+  var els = [sc].concat(Array.prototype.slice.call(sc.querySelectorAll('*')));
+  els.forEach(function(el){
+    var cs = getComputedStyle(el);
+    if (!cs.animationName || cs.animationName === 'none') return;
+    el.style.animationDelay = cs.animationDelay.split(',').map(function(d){
+      return (parseFloat(d) - ms / 1000).toFixed(3) + 's';
+    }).join(', ');
+  });
+}
+
+function activate(i, resetClock){
+  idx = i;
+  if (resetClock !== false) t = 0;
+  scenes.forEach(function(s){ s.classList.remove('is-active'); });
+  void scenes[i].offsetWidth;          // force reflow so gated animations restart
+  scenes[i].classList.add('is-active');
+  /* The sheet only wears light mode inside the scene that asks for it. */
+  if (!cache[i].flip) stage.classList.remove('lightmode');
+  tickDynamics(i, t);
+  paintChapters();
+  paintTitleblock(i);
+}
+
+function go(i){
+  if (i < 0) i = 0;
+  if (i > scenes.length - 1) i = scenes.length - 1;
+  activate(i, true);
+}
+
+function setPlaying(v){
+  playing = v;
+  document.body.classList.toggle('paused', !v);
+  document.getElementById('btnPlay').innerHTML = svg(v ? P.pause : P.play);
+  document.getElementById('btnPlay').firstChild.style.fill = 'currentColor';
+  document.getElementById('btnPlay').firstChild.style.stroke = 'none';
+}
+
+/* ─────────────── Transport ─────────────── */
+var track = document.getElementById('track');
+var chaps = document.getElementById('chapters');
+var segs = [], chips = [];
+
+scenes.forEach(function(sc, i){
+  var seg = document.createElement('div');
+  seg.className = 'seg';
+  seg.style.flexGrow = String(durs[i]);
+  seg.innerHTML = '<span></span>';
+  seg.title = sc.dataset.name;
+  seg.addEventListener('click', function(){ go(i); if (!playing) setPlaying(true); });
+  track.appendChild(seg);
+  segs.push(seg.firstChild);
+
+  var chip = document.createElement('button');
+  chip.className = 'ch';
+  chip.textContent = (i < 9 ? '0' : '') + (i + 1) + ' ' + sc.dataset.name;
+  chip.addEventListener('click', function(){ go(i); if (!playing) setPlaying(true); });
+  chaps.appendChild(chip);
+  chips.push(chip);
+});
+
+function paintChapters(){
+  chips.forEach(function(c, i){ c.classList.toggle('on', i === idx); });
+  segs.forEach(function(s, i){
+    s.parentNode.classList.toggle('done', i < idx);
+    if (i > idx) s.style.width = '0%';
+  });
+}
+
+var tbScene = document.getElementById('tbScene');
+var tbFig   = document.getElementById('tbFig');
+function paintTitleblock(i){
+  tbScene.textContent = scenes[i].dataset.name || ('Scene ' + (i + 1));
+  tbFig.textContent = 'Fig. ' + String(i + 1).padStart(2, '0') + ' / ' +
+                      String(scenes.length).padStart(2, '0');
+}
+
+function fmt(ms){
+  var s = Math.max(0, Math.round(ms / 1000));
+  return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+}
+var tCur = document.getElementById('tCur');
+document.getElementById('tTot').textContent = fmt(total);
+
+var playhead = document.getElementById('playhead');
+
+function paint(){
+  segs[idx].style.width = (clamp(t / durs[idx]) * 100) + '%';
+  /* The ruler is an axis, so something has to travel along it. */
+  playhead.style.transform = 'translateX(' + (clamp(t / durs[idx]) * 1200) + 'px)';
+  var elapsed = 0;
+  for (var i = 0; i < idx; i++) elapsed += durs[i];
+  tCur.textContent = fmt(elapsed + t);
+}
+
+function frame(ts){
+  if (!last) last = ts;
+  var dt = ts - last; last = ts;
+  if (dt > 200) dt = 16;               // tab was backgrounded — do not jump
+  if (playing){
+    t += dt;
+    if (stopAt && t >= stopAt){ t = stopAt; setPlaying(false); }
+    else if (t >= durs[idx]){
+      if (idx < scenes.length - 1) activate(idx + 1, true);
+      else { t = durs[idx]; setPlaying(false); }
+    }
+    tickDynamics(idx, t);
+  }
+  paint();
+  requestAnimationFrame(frame);
+}
+
+/* ─────────────── Controls ─────────────── */
+document.getElementById('btnPlay').addEventListener('click', function(){
+  if (!playing && idx === scenes.length - 1 && t >= durs[idx]) { go(0); setPlaying(true); }
+  else setPlaying(!playing);
+});
+document.getElementById('btnPrev').addEventListener('click', function(){ go(t > 900 ? idx : idx - 1); });
+document.getElementById('btnNext').addEventListener('click', function(){ go(idx + 1); });
+document.getElementById('btnReplay').addEventListener('click', function(){ go(0); setPlaying(true); });
+document.getElementById('btnBare').addEventListener('click', function(){
+  document.body.classList.toggle('is-bare'); fit();
+});
+document.getElementById('btnFull').addEventListener('click', function(){
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen();
+});
+
+document.addEventListener('keydown', function(e){
+  var k = e.key.toLowerCase();
+  if (e.code === 'Space'){ e.preventDefault(); document.getElementById('btnPlay').click(); }
+  else if (e.key === 'ArrowRight'){ e.preventDefault(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft'){ e.preventDefault(); go(t > 900 ? idx : idx - 1); }
+  else if (k === 'r'){ go(0); setPlaying(true); }
+  else if (k === 'h'){ document.getElementById('btnBare').click(); }
+  else if (k === 'f'){ document.getElementById('btnFull').click(); }
+});
+
+/* ─────────────── Plate ───────────────
+   Each scene is composed against a 1600x900 canvas. Rather than re-laying out
+   eleven scenes for the square sheet, every scene's children move into a plate
+   of exactly that size, which is then scaled and centred as one. Absolute
+   positions inside a scene now resolve against the canvas they were written
+   for. The titleblock stays outside, on the sheet. */
+scenes.forEach(function(sc){
+  var plate = document.createElement('div');
+  plate.className = 'plate';
+  while (sc.firstChild) plate.appendChild(sc.firstChild);
+  sc.appendChild(plate);
+});
+
+/* ─────────────── Fit the sheet to the viewport ─────────────── */
+var SW = 1200, SH = 1200;              // keep in step with --stage-w / --stage-h
+var wrap = document.querySelector('.stage-wrap');
+var sframe = document.querySelector('.stage-frame');
+function fit(){
+  var r = wrap.getBoundingClientRect();
+  /* Bare is a card thumbnail where the sheet should run to the edge, so it
+     gets no inset; the studio view keeps a little breathing room. */
+  var inset = document.body.classList.contains('is-bare') ? 0 : 8;
+  var s = Math.min((r.width - inset) / SW, (r.height - inset) / SH);
+  stage.style.transform = 'scale(' + s + ')';
+  sframe.style.width  = (SW * s) + 'px';
+  sframe.style.height = (SH * s) + 'px';
+}
+window.addEventListener('resize', fit);
+document.addEventListener('fullscreenchange', function(){ setTimeout(fit, 60); });
+/* A framed reel can change size without the window doing anything — the
+   dossier expanding, a column reflowing. Watch the box, not just the window. */
+if (window.ResizeObserver) new ResizeObserver(fit).observe(wrap);
+
+/* ─────────────── Go ─────────────── */
+var q = new URLSearchParams(location.search);
+var h = new URLSearchParams(location.hash.slice(1));
+var startScene = Math.min(scenes.length - 1, Math.max(0, (parseInt(q.get('scene'), 10) || 1) - 1));
+if (q.get('bare') === '1') document.body.classList.add('is-bare');
+
+/* The portfolio's contract, shared with every other reel in public/motion/:
+   ?embed=1 compacts the chrome for a small frame, ?chrome=0 removes it
+   entirely for a card thumbnail, and the host drives playback by message
+   because the frame is opaque from outside. */
+if (q.get('embed') === '1') document.body.classList.add('is-embed');
+if (q.get('chrome') === '0') document.body.classList.add('is-embed', 'is-bare');
+window.addEventListener('message', function(e){
+  var cmd = e.data && e.data.reel;
+  if (cmd === 'play'){ if (!reduced) setPlaying(true); }
+  else if (cmd === 'pause') setPlaying(false);
+  else if (cmd === 'restart'){ activate(0, true); if (!reduced) setPlaying(true); }
+});
+stopAt = Math.max(0, parseInt(q.get('stop'), 10) || 0);
+
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+fit();
+activate(startScene, true);
+if (stopAt){
+  t = Math.min(stopAt, durs[startScene]);
+  setPlaying(false);
+  seekScene(t);
+  tickDynamics(startScene, t);
+} else {
+  setPlaying(!reduced && q.get('paused') !== '1' && h.get('paused') !== '1');
+}
+requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 # Postal
 
+[![CI](https://github.com/fizaamjad897/ThePostal/actions/workflows/ci.yml/badge.svg)](https://github.com/fizaamjad897/ThePostal/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **A self-hosted SMTP mail transfer agent that shows you where every millisecond went.**
 
 Postal sends real mail over the wire — speaking RFC 5321 directly on sockets — and records the
@@ -24,10 +26,17 @@ S: 354 End data with <CR><LF>.<CR><LF>
 S: 250 2.0.0 Ok: queued as 4B2f1x
 ```
 
+## Live demo video
+
+https://github.com/user-attachments/assets/1cbdd4ac-ec57-4668-aca6-1e539c5bb469
+
+[Download video](docs/media/postal-demo.mp4) · [Original HTML presentation](docs/media/postal-reel.html)
+
 ---
 
 ## Table of contents
 
+- [Live demo video](#live-demo-video)
 - [What makes it interesting](#what-makes-it-interesting)
 - [Architecture](#architecture)
 - [Quick start](#quick-start)
@@ -37,7 +46,9 @@ S: 250 2.0.0 Ok: queued as 4B2f1x
 - [Observability](#observability)
 - [Testing](#testing)
 - [Configuration](#configuration)
+- [Deployment](#deployment)
 - [Limitations](#limitations)
+- [Contributing and maintenance](#contributing-and-maintenance)
 
 ---
 
@@ -378,7 +389,7 @@ in an end-to-end number.
 ## Testing
 
 ```bash
-npm test          # 55 tests
+npm test          # isolated SMTP and MongoDB integration tests
 npm run typecheck
 npm run lint
 ```
@@ -467,3 +478,10 @@ than one that says where it stops.
 ## Licence
 
 MIT
+
+
+## Contributing and maintenance
+
+See [Contributing](CONTRIBUTING.md), [Security](SECURITY.md), [Support](SUPPORT.md), [Code of conduct](CODE_OF_CONDUCT.md), and the [Changelog](CHANGELOG.md). CI runs lint, type checks, integration tests, the production build, and a server container build. Dependabot proposes dependency updates weekly; changes still require review and passing checks.
+
+Original code is available under the [MIT license](LICENSE).

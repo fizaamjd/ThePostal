@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible problem with Postal.
+body:
+  - type: markdown
+    attributes:
+      value: "Report vulnerabilities privately via the Security tab. Remove secrets and real mail content."
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Commit, Node/npm versions, operating system, and local/Docker/deployed mode.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Use local test accounts and a controlled SMTP sink.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized logs or screenshots
+      description: Remove tokens, passwords, mail bodies, and personal addresses.
